@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# ==================== 1. 颜色配置 ====================
+C_PREFIX_P="\033[0;90m" # 普拉娜：灰色
+C_PREFIX_A="\033[38;2;148;237;255m" # 阿罗娜：蓝色
+C_ALERT="\033[1;31m"    # 警告文本：红色
+C_DEBUG="\033[1;35m"    # 调试文本：紫色
+NC="\033[0m"          # 重置颜色
+
+# ==================== 2. 路径配置 ====================
+# 使用绝对路径确保在任何目录下调用都有效 [cite: 1, 23]
+SHITTIM_ROOT="$HOME/shittim"
+CONFIG_FILE="${SHITTIM_ROOT}/config"
+
+silent=false
+next_character="plana"
+vscode_play=false
+exit=false
+
+if [ -f "${CONFIG_FILE}" ]; then
+    source "${CONFIG_FILE}"
+fi
+
+if [ "$exit" = "true" ]; then
+    exit 0
+fi
+
+# ==================== 3. 核心 msg 函数 ====================
+msg() {
+    local text="$1"
+    local voice_file="$2"
+    local is_alert="$3" # 新增：第三个参数判定是否为警告 
+    
+    # 1. 确定当前执行者
+    local current_char=$next_character
+    local prefix=""
+    local voice_path=""
+    
+    if [ "$current_char" = "arona" ]; then
+        prefix="${C_PREFIX_A}[Arona]${NC}" # 使用阿罗娜前缀 
+        voice_path="${VOICE_BASE}/arona/${voice_file}"
+        next_char_to_save="plana"
+    else
+        prefix="${C_PREFIX_P}[Plana]${NC}" # 使用普拉娜前缀 
+        voice_path="${VOICE_BASE}/plana/${voice_file}"
+        next_char_to_save="arona"
+    fi
+
+    # 2. 确定文本颜色逻辑
+	if [ "$current_char" = "plana" ]; then
+		local display_color="${C_PREFIX_P}"
+	else
+		local display_color="${C_PREFIX_A}"
+	fi
+
+    if [ "$is_alert" = "true" ]; then
+        display_color="${C_ALERT}" # 如果是警告，强制设为红色 
+    fi
+
+    # 3. 打印文字
+    echo -e "${prefix} ${display_color}${text}${NC}"
+
+    # vscode 中默认屏蔽
+    if [ "$vscode_play" = "false" ]; then
+        if [ "$TERM_PROGRAM" = "vscode" ]; then
+            sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
+            next_character=$next_char_to_save
+            return 
+        fi
+    fi
+    
+    # 4. 音频处理
+    if [ "$silent" != "true" ] && [ -n "$voice_file" ]; then
+        if [ -f "$voice_path" ]; then
+            # 仅杀掉当前角色的播放进程，实现交替不打断 
+            # pkill -f "ffplay.*${current_char}" > /dev/null 2>&1
+            pkill -f "paplay.*${current_char}" > /dev/null 2>&1
+
+            # 核心改进：合并唤醒与播放
+            # 用 { 语句1; 语句2; } & 的方式，让整个序列在后台运行
+            { 
+                paplay --client-name="${current_char}" "$voice_path" > /dev/null 2>&1
+            } &
+
+        else
+            echo -e "${C_DEBUG}[Debug] 找不到${current_char}的音频: ${voice_path}${NC}"
+        fi
+    fi
+
+    # 5. 更新角色状态到 config 文件 
+    sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
+    next_character=$next_char_to_save
+}

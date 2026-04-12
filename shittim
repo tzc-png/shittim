@@ -1,0 +1,155 @@
+#!/bin/bash
+
+# ==================== 配置区域 ====================
+source $HOME/shittim/shittim_lib
+VOICE_BASE="$HOME/shittim/voice/shittim"
+
+
+
+# ==================== 逻辑处理 ====================
+# --- 基础数据获取 ---
+HOUR=$(date +%H)
+TIME_STR=$(date +%H:%M)
+
+# --- 逻辑处理 ---
+case "$1" in
+    "help")
+				if [ "$next_character" = "plana" ]; then
+					msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false"
+				else
+					msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false" 
+				fi
+
+        echo -e "  \033[1;32mrain\033[0m          - 关于下雨天的特别备忘"
+        echo -e "  \033[1;32mtime\033[0m          - 报告当前时间并给予时段建议"
+        echo -e "  \033[1;32mload\033[0m          - 检查系统负载状态"
+        echo -e "  \033[1;32mls <args>\033[0m     - 扫描并展示当前目录的构造"
+        echo -e "  \033[1;32mfind <file>\033[0m   - 递归搜索指定文件"
+        echo -e "  \033[1;32mfindline <str>\033[0m- 在代码库中检索特定内容"
+        ;;
+    "rain")
+				if [ "$next_character" = "plana" ]; then
+					msg "下雨的话就用这个……" "rain.wav" "false"
+				else
+					msg "嗯……会下雨吗？" "rain.wav" "false"
+				fi
+
+        ;;
+    "time")
+        if [ $HOUR -ge 5 ] && [ $HOUR -lt 8 ]; then
+						if [ "$next_character" = "plana" ]; then
+							msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
+						else
+							msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
+						fi
+
+				elif [ $HOUR -ge 8 ] && [ $HOUR -lt 12 ]; then
+            if [ "$next_character" = "plana" ]; then
+							msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
+						else
+							msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
+						fi
+
+				elif [ $HOUR -ge 12 ] && [ $HOUR -lt 14 ]; then
+						if [ "$next_character" = "plana" ]; then
+							msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
+						else
+							msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
+						fi
+
+				elif [ $HOUR -ge 14 ] && [ $HOUR -lt 21 ]; then
+						if [ "$next_character" = "plana" ]; then  
+							msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
+						else
+							msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
+						fi
+
+				else
+					if [ "$next_character" = "plana" ]; then
+            if [ $((RANDOM % 2)) -eq 0 ]; then
+                msg "${TIME_STR} 已经很晚了呢……" "night_1.wav" "false"
+            else
+                msg "${TIME_STR} 老师……该休息了" "night_2.wav" "false"
+            fi
+					else
+						msg "${TIME_STR} 这么晚了,老师该休息了" "night.wav" "false"
+					fi
+
+        fi
+        ;;
+    "load")
+        CPU_LOAD=$(cat /proc/loadavg | awk '{print $1}')
+        MEM_USAGE=$(free | grep Mem | awk '{print $3/$2 * 100.0}' | cut -d. -f1)
+        msg "CPU负载: ${CPU_LOAD} | 内存占用: ${MEM_USAGE}%" "load.wav" "false"
+        if [ $(echo "$CPU_LOAD > 4.0" | bc 2>/dev/null || echo 0) -ne 0 ] || [ $MEM_USAGE -gt 80 ]; then
+            # 负载警告维持红色
+						if [ "$next_character" = "plana" ]; then
+							msg "当前负载过高" "alert.wav" "true"
+						else
+							msg "当前负载过高" "alert.wav" "true"
+						fi
+
+        fi
+        ;;
+    "ls")
+				if [ "$next_character" = "plana" ]; then
+					msg "嗯……这里是这样的构造呢" "ls_observe.wav" "false"
+				else
+					msg "这里都有什么呢？" "ls_observe.wav" "false"
+				fi
+
+        shift
+        /bin/ls --color=auto "$@"
+        ;;
+    "find")
+        if [ -z "$2" ]; then
+						if [ "$next_character" = "plana" ]; then
+							msg "老师，请指定要查找的文件名" "where.wav" "false"
+						else
+							msg "老师，请指定要查找的文件名" "where.wav" "false"
+						fi
+
+        else
+						if [ "$next_character" = "plana" ]; then
+							msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
+						else
+							msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
+						fi
+
+            find . -name "$2"
+        fi
+        ;;
+    "findline")
+        if [ -z "$2" ]; then
+						if [ "$next_character" = "plana" ]; then
+							msg "老师，请提供一个搜索字符串" "where.wav" "false"
+						else
+							msg "老师，请提供一个搜索字符串" "where.wav" "false"
+						fi
+
+        else
+						if [ "$next_character" = "plana" ]; then
+							msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
+						else
+							msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
+						fi
+
+            grep -rn "$2" . --exclude-dir=.git
+        fi
+        ;;
+    *)
+			if [ "$next_character" = "plana" ]; then
+        case $((RANDOM % 2)) in
+            0) msg "混乱……该行动无法理解……请不要戳我，会出现故障" "logic_error.wav" "false";;
+            1) msg "我明白了，老师现在无事可做，很无聊" "boring.wav" "false";;
+        esac
+			else
+				case $((RANDOM % 3)) in
+						0) msg "偶尔也要考虑一下身体状况，我很担心老师的健康！" "care.wav" "false";;
+						1) msg "有很多必须要解决的工作呢,成年人还真是不容易" "not_easy.wav" "false";;
+						2) msg "哇……工作量也太多了" "too_many.wav" "false";;
+				esac
+			fi
+
+        ;;
+esac
