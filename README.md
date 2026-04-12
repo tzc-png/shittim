@@ -2,6 +2,11 @@
 
 这是一个基于《蔚蓝档案》主题开发的 Bash 终端工具。通过此工具 **普拉娜 (Plana)** 与 **阿罗娜 (Arona)** 将进驻您的终端，提供情感陪伴。
 
+使用的项目包括：GPT-SoVITS
+
+使用的模型来自：bilibili@SLNeil
+（BV1o4fyYuEPW）
+
 ## 📋 依赖要求 (Dependencies)
 
 在运行本项目前，请确保您的 Linux 环境已安装以下必要组件：

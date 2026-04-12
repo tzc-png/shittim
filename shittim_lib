@@ -15,6 +15,7 @@ CONFIG_FILE="${SHITTIM_ROOT}/config"
 silent=false
 next_character="plana"
 vscode_play=false
+characteristic=shy
 exit=false
 
 if [ -f "${CONFIG_FILE}" ]; then
@@ -59,6 +60,12 @@ msg() {
 
     # 3. 打印文字
     echo -e "${prefix} ${display_color}${text}${NC}"
+
+    if [ "$voice_file" = "" ]; then
+        sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
+        next_character=$next_char_to_save
+        return 
+    fi
 
     # vscode 中默认屏蔽
     if [ "$vscode_play" = "false" ]; then
