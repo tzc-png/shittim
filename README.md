@@ -7,6 +7,8 @@
 使用的模型来自：bilibili@SLNeil
 （BV1o4fyYuEPW）
 
+核心对话引擎：Ollama (Qwen 2.5:7b)
+
 ## 📋 依赖要求 (Dependencies)
 
 在运行本项目前，请确保您的 Linux 环境已安装以下必要组件：
@@ -16,14 +18,17 @@
 * **bc:** 用于处理复杂的数学运算（如系统负载解析）
 * **awk / sed:** 用于提取系统数据及角色状态持久化
 * **procps:** 提供 `free` 命令以监控内存占用情况
+* **jq:** 用于处理 AI 接口的 JSON 数据。
+* **Ollama:** 必须安装。请确保已通过 `ollama pull qwen2.5:7b` 获取对话模型。
 
 ### 2. 音频支持
 * **pulseaudio-utils:** 必须安装，系统通过 `paplay` 指令驱动语音反馈
-* **音频服务器:** 需运行 PulseAudio 或兼容 PipeWire 的环境
 
 **安装参考 (Ubuntu/Debian):**
 ```bash
-sudo apt update && sudo apt install bc pulseaudio-utils procps coreutils
+sudo apt update && sudo apt install bc jq pulseaudio-utils procps coreutils
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull qwen2.5:7b
 ```
 
 ---
@@ -58,6 +63,7 @@ source ~/.bashrc
 * `load`: 实时监控 CPU 与内存负载，并在过载时发出预警
 * `ls / find`: 经过 AI 视觉增强的文件检索与目录扫描
 * `rain`: 关于下雨天的特别备注
+* `shittim plana <str>`: 普拉娜会以文静、理性的性格与您互动。
 也可以在终端直接输入 `shittim` 
 
 ---
@@ -78,3 +84,4 @@ source ~/.bashrc
 2. **silent** 设置为 true 可全局静音语音反馈
 3. **vscode_play** 设置为 true 后，即使在 VSCode 终端内也会播放语音
 4. **exit** 设置为 true 将使脚本停止所有响应
+5. **characteristic**设置prompt,有shy,shy_simple,enthusiastic三个选项
