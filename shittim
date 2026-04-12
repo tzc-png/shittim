@@ -1,8 +1,11 @@
 #!/bin/bash
 
 # ==================== 配置区域 ====================
-source $HOME/shittim/shittim_lib
-VOICE_BASE="$HOME/shittim/voice/shittim"
+SCRIPT_DIR=$(cd "$(dirname "$0")"; pwd)
+
+# 使用相对脚本位置的路径进行加载 [cite: 1, 28]
+source "${SCRIPT_DIR}/shittim_lib"
+VOICE_BASE="${SCRIPT_DIR}/voice/shittim"
 
 
 

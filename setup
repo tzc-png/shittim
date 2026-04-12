@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# ====================================================
+# Shittim Box Setup Protocol - 什亭之匣配置协议 (Ver 1.1)
+# 修复逻辑：强制重置 color_prompt 状态，确保视觉沉浸效果
+# ====================================================
+
+# 1. 环境准备
+SHITTIM_DIR=$(cd "$(dirname "$0")"; pwd)
+BASHRC="$HOME/.bashrc"
+BACKUP_BASHRC="$HOME/.bashrc.shittim.bak"
+
+echo "\033[0;90m[Plana]\033[0m 正在启动配置协议，目标目录: ${SHITTIM_DIR}"
+
+# 2. 备份原始文件
+cp "$BASHRC" "$BACKUP_BASHRC"
+echo "\033[0;90m[Plana]\033[0m 已备份原始 .bashrc 至 ${BACKUP_BASHRC}"
+
+# 3. 清理旧配置
+sed -i '/# >>> SHITTIM BOX CONFIG START >>>/,/# <<< SHITTIM BOX CONFIG END <<</d' "$BASHRC"
+
+# 4. 写入新配置
+# 在配置块内重新定义 color_prompt，以覆盖文件前部的 unset 操作
+cat << EOF >> "$BASHRC"
+
+# >>> SHITTIM BOX CONFIG START >>>
+# 什亭之匣沉浸式视觉与功能配置区
+
+# 强制开启颜色支持探测 (防止被前文 unset 影响)
+case "\$TERM" in
+    xterm-color|*-256color) local_color_prompt=yes;;
+esac
+
+# 终端配色增强 (TrueColor)
+if [ "\$local_color_prompt" = yes ]; then
+    # 普拉娜粉与阿罗娜蓝配色方案
+    PS1='\${debian_chroot:+(\$debian_chroot)}\[\033[38;2;255;139;193m\]\u@\h\[\033[00m\]:\[\033[38;2;186;249;254m\]\w\[\033[00m\]\$ '
+else
+    PS1='\${debian_chroot:+(\$debian_chroot)}\u@\h:\w\$ '
+fi
+unset local_color_prompt
+
+# 路径与自动唤醒协议
+export PATH="${SHITTIM_DIR}:\$PATH"
+if [ -f "${SHITTIM_DIR}/shittim_welcome" ]; then
+    "${SHITTIM_DIR}/shittim_welcome"
+fi
+# <<< SHITTIM BOX CONFIG END <<<
+EOF
+
+# 5. 设置权限
+chmod +x "${SHITTIM_DIR}/shittim"*
+
+echo "\033[0;90m[Plana]\033[0m 配置同步成功 老师，请执行 \033[1;32msource ~/.bashrc\033[0m 以激活协议。"
