@@ -19,6 +19,7 @@ vscode_play=false
 characteristic=shy
 exit=false
 cmd=secure
+cmd_ignore=true
 memory=recent
 
 if [ -f "${CONFIG_FILE}" ]; then

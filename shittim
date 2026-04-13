@@ -269,6 +269,12 @@ case "$1" in
 
         # --- 指令处理逻辑 ---
         if echo "$RESPONSE" | grep -q ">>>EXEC:"; then
+            if [ "$cmd_ignore" = "true" ]; then
+                next_character="plana"
+                msg "普拉娜……拒绝执行此指令。理由：config文件中启用了cmd_ignore" "" "true"
+                exit 1
+            fi
+
             FULL_CMD=$(echo "$RESPONSE" | sed -n 's/.*>>>EXEC:[[:space:]]*\(.*\)[[:space:]]*<<<.*/\1/p' | sed 's/[[:space:]]*$//')
 
             if [ -z "$FULL_CMD" ]; then
