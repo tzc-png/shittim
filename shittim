@@ -165,7 +165,15 @@ case "$1" in
         touch "$HISTORY_FILE"
         
         # 提取历史（Qwen 2.5 处理能力强，可以多记几轮，取最近14行约7轮对话）
-        RECENT_HISTORY=$(tail -n 21 "$HISTORY_FILE")
+        if [ "$memory" = "recent" ]; then
+            RECENT_HISTORY=$(get_history "recent" 12)
+        elif [ "$memory" = "recall" ]; then
+            RECENT_HISTORY=$(get_history "recall" 8 8)
+        else
+            echo "invalid config:memory!"
+            exit 1
+        fi
+        
 
         # 优化后的 System Prompt：更符合中文语境的人格设定
         if [ "$characteristic" = "shy" ]; then
@@ -243,7 +251,7 @@ case "$1" in
         - 仅在老师下达“统计代码”、“查询文件”等明确终端任务时，使用 >>>EXEC: 指令<<< 格式。
         - 日常聊天、情感互动禁止使用 EXEC 格式。"
         else
-            echo "invalid characteristic!"
+            echo "invalid config:characteristic!"
             exit 1
         fi
 
@@ -313,7 +321,7 @@ case "$1" in
             done
 
             next_character="plana"
-            msg "正在执行指令: ${C_CODE_DISPLAY}${FULL_CMD}${NC}" "" "false"  ##########################
+            msg "正在执行指令: ${C_CODE_DISPLAY}${FULL_CMD}${NC}" "" "false" 
 
             if [ "$cmd" = "secure" ]; then 
                 next_character="plana"

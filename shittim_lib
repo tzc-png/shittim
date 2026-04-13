@@ -30,7 +30,7 @@ if [ "$exit" = "true" ]; then
     exit 0
 fi
 
-# ==================== 3. 核心 msg 函数 ====================
+# ==================== 3. 核心函数 ====================
 msg() {
     local text="$1"
     local voice_file="$2"
@@ -101,4 +101,132 @@ msg() {
     # 5. 更新角色状态到 config 文件 
     sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
     next_character=$next_char_to_save
+}
+
+# 日志合法性检查与自动修复函数 (协议：User 必须领先且成对出现)
+check_and_fix_log() {
+    local history_file="${SHITTIM_ROOT}/history/plana_history.log"
+    
+    # 如果文件不存在或为空，无需修复
+    [ ! -s "$history_file" ] && return 0
+
+    local tmp_file="${history_file}.tmp"
+    local last_role=""
+    local buffer=""
+
+    # 逐行扫描日志
+    while IFS= read -r line || [ -n "$line" ]; do
+        # 1. 识别当前行的角色
+        local current_role=""
+        if [[ "$line" =~ ^User: ]]; then
+            current_role="User"
+        elif [[ "$line" =~ ^AI: ]]; then
+            current_role="AI"
+        else
+            continue # 忽略不规范的行
+        fi
+
+        # 2. 状态机逻辑
+        if [ -z "$last_role" ]; then
+            # 第一行：必须是 User
+            if [ "$current_role" = "User" ]; then
+                buffer="$line"
+                last_role="User"
+            fi
+            # 如果第一行是 AI，直接丢弃（没有老师的提问就没有意义）
+        else
+            # 期望交替出现
+            if [ "$current_role" != "$last_role" ]; then
+                if [ "$current_role" = "AI" ]; then
+                    # 成功配对：将 User 和 AI 同时写入临时文件
+                    echo "$buffer" >> "$tmp_file"
+                    echo "$line" >> "$tmp_file"
+                    buffer="" # 清空缓冲
+                    last_role="AI"
+                else
+                    # 出现了连续的 User，更新 buffer 为最新的 User
+                    # 这意味着如果老师连续发了两条，我们以最后一条为准
+                    buffer="$line"
+                    last_role="User"
+                fi
+            else
+                # 如果连续出现相同角色 (如 AI 后面又是 AI)
+                # 则保持 last_role 不变，丢弃旧的，等待下一个角色
+                if [ "$current_role" = "User" ]; then
+                    buffer="$line"
+                fi
+            fi
+        fi
+    done < "$history_file"
+
+    # 覆盖原文件
+    if [ -f "$tmp_file" ]; then
+        mv "$tmp_file" "$history_file"
+    else
+        # 如果修复后什么都没剩下，则清空原文件
+        > "$history_file"
+    fi
+}
+
+# 获取历史记录函数 (全量/智能回忆模式)
+get_history() {
+
+    check_and_fix_log
+
+    local mode=$1
+    local n1=$2
+    local n2=$3
+    local history_file="${SHITTIM_ROOT}/history/plana_history.log"
+
+    # --- 参数合法性强校验 ---
+    if [[ "$mode" != "recent" && "$mode" != "recall" ]]; then
+        echo -e "\033[1;31m[Error]\033[0m get_history 参数错误: 未知的模式 '$mode'" >&2
+        exit 1 # 直接终止整个程序执行
+    fi
+
+    # --- 2. 核心改动：空记忆处理 ---
+    # 如果历史文件不存在或内容为空（-s 指文件大小大于0）
+    if [ ! -s "$history_file" ]; then
+        # 直接输出初见引导语，供主脚本中的变量捕获
+        echo "(这是老师和你的第一次对话。你刚被唤醒，请表现得文静、礼貌且略带羞涩。)"
+        return 0
+    fi
+
+    # 1. 基础数据统计
+    local total_lines=$(wc -l < "$history_file")
+    local valid_total=$(( total_lines / 2 * 2 )) # 确保是偶数对
+    local total_pairs=$(( valid_total / 2 ))
+    local requested_total=$(( n1 + n2 ))
+
+    # 2. 逻辑分水岭：如果请求总量 >= 实际总量，或者模式为 recent
+    if [ "$mode" = "recent" ] || [ "$requested_total" -ge "$total_pairs" ]; then
+        if [ "$mode" = "recent" ]; then
+            # recent 模式依然遵循 n1 的限制
+            local n1_lines=$(( n1 * 2 ))
+            tail -n "$n1_lines" "$history_file"
+        else
+            # recall 模式但数据量不足：直接输出文件所有有效内容
+            head -n "$valid_total" "$history_file"
+        fi
+        return 0
+    fi
+
+    echo "（下面是之前的对话）"
+    # 3. 核心 Recall 逻辑 (仅在数据充足时触发)
+    local n1_lines=$(( n1 * 2 ))
+    local recent_start_line=$(( valid_total - n1_lines + 1 ))
+    local pool_pairs=$(( (recent_start_line - 1) / 2 ))
+
+    # 随机抽取 n2 对并保持顺序
+    local random_indices=$(seq 1 "$pool_pairs" | shuf -n "$n2" | sort -n)
+    for idx in $random_indices; do
+        local start=$(( (idx - 1) * 2 + 1 ))
+        sed -n "${start},$((start + 1))p" "$history_file"
+    done
+    
+    # 只有在这里才会出现记忆断层
+    echo "（下面是最近的对话）"
+    
+    # 输出最近的 n1 对
+    tail -n "$n1_lines" "$history_file"
 }
