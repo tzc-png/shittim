@@ -17,7 +17,7 @@ silent=false
 next_character="plana"
 vscode_play=false
 characteristic=shy
-exit=false
+is_exit=false
 cmd=secure
 cmd_ignore=true
 memory=recent
@@ -26,7 +26,7 @@ if [ -f "${CONFIG_FILE}" ]; then
     source "${CONFIG_FILE}"
 fi
 
-if [ "$exit" = "true" ]; then
+if [ "$is_exit" = "true" ]; then
     exit 0
 fi
 
@@ -181,7 +181,8 @@ get_history() {
     # --- 参数合法性强校验 ---
     if [[ "$mode" != "recent" && "$mode" != "recall" ]]; then
         echo -e "\033[1;31m[Error]\033[0m get_history 参数错误: 未知的模式 '$mode'" >&2
-        exit 1 # 直接终止整个程序执行
+        exit 1 
+        # 直接终止整个程序执行
     fi
 
     # --- 2. 核心改动：空记忆处理 ---
@@ -229,4 +230,45 @@ get_history() {
     
     # 输出最近的 n1 对
     tail -n "$n1_lines" "$history_file"
+}
+
+# 场景重置判定函数
+# 参数 $1: 原始历史记录变量名 (建议直接传入内容)
+context_auto_reset() {
+    local raw_history="$1"
+    
+    # 1. 提取最后一条记录的时间戳 (匹配格式如 2026-04-13 09:06:14)
+    # 使用 grep 和 tail 确保拿到最后一行的时间
+    local last_time_str=$(echo "$raw_history" | grep -oP '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}' | tail -n 1)
+
+    # 如果没找到时间戳（比如第一次对话），直接返回原内容
+    if [ -z "$last_time_str" ]; then
+        echo "$raw_history"
+        return 0
+    fi
+
+    # 2. 转换时间为秒数进行计算
+    local last_seconds=$(date -d "$last_time_str" +%s)
+    local now_seconds=$(date +%s)
+    local diff_seconds=$((now_seconds - last_seconds))
+
+    # 3. 判定阈值：这里设定为 1800 秒 (0.5 小时)
+    local threshold=1800
+
+    if [ $diff_seconds -gt $threshold ]; then
+        # 确定时间段描述
+        local hour=$(date +%H)
+        local period="深夜"
+        [ $hour -ge 5 ] && [ $hour -lt 11 ] && period="早晨"
+        [ $hour -ge 11 ] && [ $hour -lt 14 ] && period="中午"
+        [ $hour -ge 14 ] && [ $hour -lt 18 ] && period="下午"
+        [ $hour -ge 18 ] && [ $hour -lt 24 ] && period="晚上"
+        [ $hour -ge 0 ] && [ $hour -lt 5 ] && period="深夜"
+
+        # 4. 插入重置标记并输出
+        echo -e "${raw_history}\nSystem: [一段时间过去了，现在是${period}，之前的场景已结束，请根据当前时间重新开始互动。]"
+    else
+        # 时间很近，维持原样
+        echo "$raw_history"
+    fi
 }

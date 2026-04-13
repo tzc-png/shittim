@@ -1,8 +1,8 @@
 silent=false
 vscode_play=false
-exit=false
+is_exit=false
 characteristic=shy
-next_character="arona"
+next_character="plana"
 cmd=secure
 cmd_ignore=true
 memory=recent
