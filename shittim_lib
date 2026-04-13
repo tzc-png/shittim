@@ -6,6 +6,7 @@ C_PREFIX_A="\033[38;2;100;251;252m" # 阿罗娜：蓝色
 C_ALERT="\033[1;31m"    # 警告文本：红色
 C_DEBUG="\033[1;35m"    # 调试文本：紫色
 NC="\033[0m"          # 重置颜色
+C_CODE_DISPLAY="\033[1;32m"
 
 # ==================== 2. 路径配置 ====================
 # 使用绝对路径确保在任何目录下调用都有效
@@ -17,6 +18,8 @@ next_character="plana"
 vscode_play=false
 characteristic=shy
 exit=false
+cmd=secure
+memory=recent
 
 if [ -f "${CONFIG_FILE}" ]; then
     source "${CONFIG_FILE}"

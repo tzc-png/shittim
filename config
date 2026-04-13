@@ -2,4 +2,6 @@ silent=false
 vscode_play=false
 exit=false
 characteristic=shy
-next_character="plana"
+next_character="arona"
+cmd=secure
+memory=recent

@@ -3,11 +3,12 @@
 这是一个基于《蔚蓝档案》主题开发的 Bash 终端工具。通过此工具 **普拉娜 (Plana)** 与 **阿罗娜 (Arona)** 将进驻您的终端，提供情感陪伴。
 
 使用的项目包括：GPT-SoVITS
-
 使用的模型来自：bilibili@SLNeil
 （BV1o4fyYuEPW）
 
 核心对话引擎：Ollama (Qwen 2.5:7b)
+
+**模型的主要目的是聊天互动。虽然模型可以实现在终端执行指令的功能，但这不是该模型的主要目的，而且存在较大风险，请谨慎使用**
 
 ## 📋 依赖要求 (Dependencies)
 
@@ -64,7 +65,7 @@ source ~/.bashrc
 * `ls / find`: 经过 AI 视觉增强的文件检索与目录扫描
 * `rain`: 关于下雨天的特别备注
 * `shittim plana <str>`: 普拉娜会以文静、理性的性格与您互动。
-也可以在终端直接输入 `shittim` 
+* 也可以在终端直接输入 `shittim` 
 
 ---
 
@@ -85,3 +86,4 @@ source ~/.bashrc
 3. **vscode_play** 设置为 true 后，即使在 VSCode 终端内也会播放语音
 4. **exit** 设置为 true 将使脚本停止所有响应
 5. **characteristic**设置prompt,有shy,shy_simple,enthusiastic三个选项
+6. **cmd**默认设置为secure,这样每次执行指令之前都会要求确认。若设置为free,则执行指令无须确认。强烈建议使用secure
