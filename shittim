@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # ==================== 配置区域 ====================
-SCRIPT_DIR=$(cd "$(dirname "$0")"; pwd)
+SCRIPT_DIR=$(
+    cd "$(dirname "$0")"
+    pwd
+)
 
 # 使用相对脚本位置的路径进行加载 [cite: 1, 28]
 source "${SCRIPT_DIR}/shittim_lib"
@@ -14,170 +17,189 @@ TIME_STR=$(date +%H:%M)
 
 # --- 逻辑处理 ---
 case "$1" in
-    "help")
-				if [ "$next_character" = "plana" ]; then
-					msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false"
-				else
-					msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false" 
-				fi
+"help")
+    if [ "$next_character" = "plana" ]; then
+        msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false"
+    else
+        msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false"
+    fi
 
-        echo -e "  \033[1;32mrain\033[0m          - 关于下雨天的特别备忘"
-        echo -e "  \033[1;32mtime\033[0m          - 报告当前时间并给予时段建议"
-        echo -e "  \033[1;32mload\033[0m          - 检查系统负载状态"
-        echo -e "  \033[1;32mls <args>\033[0m     - 扫描并展示当前目录的构造"
-        echo -e "  \033[1;32mfind <file>\033[0m   - 递归搜索指定文件"
-        echo -e "  \033[1;32mfindline <str>\033[0m- 在代码库中检索特定内容"
-        ;;
-    "rain")
-				if [ "$next_character" = "plana" ]; then
-					msg "下雨的话就用这个……" "rain.wav" "false"
-				else
-					msg "嗯……会下雨吗？" "rain.wav" "false"
-				fi
+    echo -e "  \033[1;32mrain\033[0m          - 关于下雨天的特别备忘"
+    echo -e "  \033[1;32mtime\033[0m          - 报告当前时间并给予时段建议"
+    echo -e "  \033[1;32mload\033[0m          - 检查系统负载状态"
+    echo -e "  \033[1;32mls <args>\033[0m     - 扫描并展示当前目录的构造"
+    echo -e "  \033[1;32mfind <file>\033[0m   - 递归搜索指定文件"
+    echo -e "  \033[1;32mfindline <str>\033[0m- 在代码库中检索特定内容"
+    echo -e "  \033[1;32mplana <str>\033[0m   - 和plana聊天"
+    ;;
+"rain")
+    if [ "$next_character" = "plana" ]; then
+        msg "下雨的话就用这个……" "rain.wav" "false"
+    else
+        msg "嗯……会下雨吗？" "rain.wav" "false"
+    fi
 
-        ;;
-    "time")
-        if [ $HOUR -ge 5 ] && [ $HOUR -lt 8 ]; then
-						if [ "$next_character" = "plana" ]; then
-							msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
-						else
-							msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
-						fi
+    ;;
+"time")
+    if [ $HOUR -ge 5 ] && [ $HOUR -lt 8 ]; then
+        if [ "$next_character" = "plana" ]; then
+            msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
+        else
+            msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
+        fi
 
-				elif [ $HOUR -ge 8 ] && [ $HOUR -lt 12 ]; then
-            if [ "$next_character" = "plana" ]; then
-							msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
-						else
-							msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
-						fi
+    elif [ $HOUR -ge 8 ] && [ $HOUR -lt 12 ]; then
+        if [ "$next_character" = "plana" ]; then
+            msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
+        else
+            msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
+        fi
 
-				elif [ $HOUR -ge 12 ] && [ $HOUR -lt 14 ]; then
-						if [ "$next_character" = "plana" ]; then
-							msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
-						else
-							msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
-						fi
+    elif [ $HOUR -ge 12 ] && [ $HOUR -lt 14 ]; then
+        if [ "$next_character" = "plana" ]; then
+            msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
+        else
+            msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
+        fi
 
-				elif [ $HOUR -ge 14 ] && [ $HOUR -lt 21 ]; then
-						if [ "$next_character" = "plana" ]; then  
-							msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
-						else
-							msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
-						fi
+    elif [ $HOUR -ge 14 ] && [ $HOUR -lt 21 ]; then
+        if [ "$next_character" = "plana" ]; then
+            msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
+        else
+            msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
+        fi
 
-				else
-					if [ "$next_character" = "plana" ]; then
+    else
+        if [ "$next_character" = "plana" ]; then
             if [ $((RANDOM % 2)) -eq 0 ]; then
                 msg "${TIME_STR} 已经很晚了呢……" "night_1.wav" "false"
             else
                 msg "${TIME_STR} 老师……该休息了" "night_2.wav" "false"
             fi
-					else
-						msg "${TIME_STR} 这么晚了,老师该休息了" "night.wav" "false"
-					fi
-
-        fi
-        ;;
-    "load")
-        CPU_LOAD=$(cat /proc/loadavg | awk '{print $1}')
-        MEM_USAGE=$(free | grep Mem | awk '{print $3/$2 * 100.0}' | cut -d. -f1)
-        msg "CPU负载: ${CPU_LOAD} | 内存占用: ${MEM_USAGE}%" "load.wav" "false"
-        if [ $(echo "$CPU_LOAD > 4.0" | bc 2>/dev/null || echo 0) -ne 0 ] || [ $MEM_USAGE -gt 80 ]; then
-            # 负载警告维持红色
-						if [ "$next_character" = "plana" ]; then
-							msg "当前负载过高" "alert.wav" "true"
-						else
-							msg "当前负载过高" "alert.wav" "true"
-						fi
-
-        fi
-        ;;
-    "ls")
-				if [ "$next_character" = "plana" ]; then
-					msg "嗯……这里是这样的构造呢" "ls_observe.wav" "false"
-				else
-					msg "这里都有什么呢？" "ls_observe.wav" "false"
-				fi
-
-        shift
-        /bin/ls --color=auto "$@"
-        ;;
-    "find")
-        if [ -z "$2" ]; then
-						if [ "$next_character" = "plana" ]; then
-							msg "老师，请指定要查找的文件名" "where.wav" "false"
-						else
-							msg "老师，请指定要查找的文件名" "where.wav" "false"
-						fi
-
         else
-						if [ "$next_character" = "plana" ]; then
-							msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
-						else
-							msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
-						fi
-
-            find . -name "$2"
+            msg "${TIME_STR} 这么晚了,老师该休息了" "night.wav" "false"
         fi
-        ;;
-    "findline")
-        if [ -z "$2" ]; then
-						if [ "$next_character" = "plana" ]; then
-							msg "老师，请提供一个搜索字符串" "where.wav" "false"
-						else
-							msg "老师，请提供一个搜索字符串" "where.wav" "false"
-						fi
 
+    fi
+    ;;
+"load")
+    CPU_LOAD=$(cat /proc/loadavg | awk '{print $1}')
+    MEM_USAGE=$(free | grep Mem | awk '{print $3/$2 * 100.0}' | cut -d. -f1)
+    msg "CPU负载: ${CPU_LOAD} | 内存占用: ${MEM_USAGE}%" "load.wav" "false"
+    if [ $(echo "$CPU_LOAD > 4.0" | bc 2>/dev/null || echo 0) -ne 0 ] || [ $MEM_USAGE -gt 80 ]; then
+        # 负载警告维持红色
+        if [ "$next_character" = "plana" ]; then
+            msg "当前负载过高" "alert.wav" "true"
         else
-						if [ "$next_character" = "plana" ]; then
-							msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
-						else
-							msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
-						fi
-
-            grep -rn "$2" . --exclude-dir=.git
-        fi
-        ;;
-
-
-    "plana")
-        # 在 setup.sh 中加入
-        if ! command -v ollama &> /dev/null; then
-            echo -e "\033[1;33m[Warning]\033[0m 未检测到 Ollama，AI 对话功能将无法使用。"
-            echo "请执行: curl -fsSL https://ollama.com/install.sh | sh"
-            exit 0
+            msg "当前负载过高" "alert.wav" "true"
         fi
 
-        next_character="plana"
-        USER_INPUT="${*:2}"
-        
-        # 记忆文件路径（放在/hostory）
-        HISTORY_FILE="${SCRIPT_DIR}/history/plana_history.log"
-        HISTORY_PATH="${SCRIPT_DIR}/history/"
+    fi
+    ;;
+"ls")
+    if [ "$next_character" = "plana" ]; then
+        msg "嗯……这里是这样的构造呢" "ls_observe.wav" "false"
+    else
+        msg "这里都有什么呢？" "ls_observe.wav" "false"
+    fi
 
-        # 获取当前时间
-        CURRENT_TIME=$(date "+%Y-%m-%d %H:%M:%S")
-        
-        # 更新历史文件时间戳
-        mkdir -p "$HISTORY_PATH"
-        touch "$HISTORY_FILE"
-        
-        # 提取历史
-        if [ "$memory" = "recent" ]; then
-            RECENT_HISTORY=$(get_history "recent" 10)
-        elif [ "$memory" = "recall" ]; then
-            RECENT_HISTORY=$(get_history "recall" 4 6)
+    shift
+    /bin/ls --color=auto "$@"
+    ;;
+"find")
+    if [ -z "$2" ]; then
+        if [ "$next_character" = "plana" ]; then
+            msg "老师，请指定要查找的文件名" "where.wav" "false"
         else
-            echo "invalid config:memory!"
+            msg "老师，请指定要查找的文件名" "where.wav" "false"
+        fi
+
+    else
+        if [ "$next_character" = "plana" ]; then
+            msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
+        else
+            msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
+        fi
+
+        find . -name "$2"
+    fi
+    ;;
+"findline")
+    if [ -z "$2" ]; then
+        if [ "$next_character" = "plana" ]; then
+            msg "老师，请提供一个搜索字符串" "where.wav" "false"
+        else
+            msg "老师，请提供一个搜索字符串" "where.wav" "false"
+        fi
+
+    else
+        if [ "$next_character" = "plana" ]; then
+            msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
+        else
+            msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
+        fi
+
+        grep -rn "$2" . --exclude-dir=.git
+    fi
+    ;;
+
+"plana")
+    # --- 检查当前运行模型 ---
+    CURRENT_MODEL=$(ollama ps | awk 'NR==2 {print $1}')
+
+    if [ -n "$CURRENT_MODEL" ] && [ "$CURRENT_MODEL" != "$model" ]; then
+        msg "检测到当前正在运行模型: $CURRENT_MODEL" "" "false"
+        msg "是否停止该模型并切换到 $model ? (y/n):" "" "false"
+        read -r confirm
+
+        if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+            msg "正在停止模型: $CURRENT_MODEL" "" "false"
+            ollama stop "$CURRENT_MODEL"
+        elif [ "$confirm" = "n" ] || [ "$confirm" = "N" ]; then
+            msg "已取消操作" "" "false"
+        else
+            echo "unexpected"
             exit 1
         fi
-        RECENT_HISTORY=$(context_auto_reset "$RECENT_HISTORY")
+    fi
 
-        # SYSTEM_PROMPT 从 prompt_lib 导入
-        source "${SCRIPT_DIR}/prompt_lib"
+    # 检测ollama是否存在
+    if ! command -v ollama &>/dev/null; then
+        echo -e "\033[1;33m[Warning]\033[0m 未检测到 Ollama，AI 对话功能将无法使用。"
+        echo "请执行: curl -fsSL https://ollama.com/install.sh | sh"
+        exit 0
+    fi
 
-        if [ "$model" = "qwen2.5:14b" ]; then
-            JSON_DATA=$(jq -n \
+    next_character="plana"
+    USER_INPUT="${*:2}"
+
+    # 记忆文件路径（放在/hostory）
+    HISTORY_FILE="${SCRIPT_DIR}/history/plana_history.log"
+    HISTORY_PATH="${SCRIPT_DIR}/history/"
+
+    # 获取当前时间
+    CURRENT_TIME=$(date "+%Y-%m-%d %H:%M:%S")
+
+    # 更新历史文件时间戳
+    mkdir -p "$HISTORY_PATH"
+    touch "$HISTORY_FILE"
+
+    # 提取历史
+    if [ "$memory" = "recent" ]; then
+        RECENT_HISTORY=$(get_history "recent" 10)
+    elif [ "$memory" = "recall" ]; then
+        RECENT_HISTORY=$(get_history "recall" 4 6)
+    else
+        echo "invalid config:memory!"
+        exit 1
+    fi
+    RECENT_HISTORY=$(context_auto_reset "$RECENT_HISTORY")
+
+    # SYSTEM_PROMPT 从 prompt_lib 导入
+    source "${SCRIPT_DIR}/prompt_lib"
+
+    if [ "$model" = "qwen2.5:14b" ]; then
+        JSON_DATA=$(jq -n \
             --arg m "qwen2.5:14b" \
             --arg s "$SYSTEM_PROMPT" \
             --arg h "history: $RECENT_HISTORY" \
@@ -191,118 +213,115 @@ case "$1" in
                 "temperature": 0.85
               }, 
               "stream": false}')
-        elif [ "$model" = "qwen2.5:7b" ]; then
-            JSON_DATA=$(jq -n \
+    elif [ "$model" = "qwen2.5:7b" ]; then
+        JSON_DATA=$(jq -n \
             --arg m "qwen2.5:7b" \
             --arg s "$SYSTEM_PROMPT" \
             --arg h "history: $RECENT_HISTORY" \
             --arg u "User: $USER_INPUT" \
             '{"model": $m, "system": $s, "prompt": ($h + "\n" + $u), "stream": false}')
-        else
-            echo "invalid config:model"
+    else
+        echo "invalid config:model"
+        exit 1
+    fi
+
+    # 增加一个简单的加载提示
+    RESPONSE=$(curl -s -X POST http://localhost:11434/api/generate -d "$JSON_DATA" | jq -r '.response')
+
+    # 存储逻辑：只有非指令回复才记录 ---
+    if ! echo "$RESPONSE" | grep -q ">>>EXEC:"; then
+        # 只有 AI 正常说话时，才记录这一轮对话
+        echo "User: $USER_INPUT (time:$CURRENT_TIME)" >>"$HISTORY_FILE"
+        echo "AI: $RESPONSE" >>"$HISTORY_FILE"
+    fi
+
+    # --- 指令处理逻辑 ---
+    if echo "$RESPONSE" | grep -q ">>>EXEC:"; then
+        if [ "$cmd_ignore" = "true" ]; then
+            next_character="plana"
+            msg "普拉娜……拒绝执行此指令。理由：config文件中启用了cmd_ignore" "" "true"
             exit 1
         fi
 
-        # 增加一个简单的加载提示
-        RESPONSE=$(curl -s -X POST http://localhost:11434/api/generate -d "$JSON_DATA" | jq -r '.response')
+        FULL_CMD=$(echo "$RESPONSE" | sed -n 's/.*>>>EXEC:[[:space:]]*\(.*\)[[:space:]]*<<<.*/\1/p' | sed 's/[[:space:]]*$//')
 
-        # 存储逻辑：只有非指令回复才记录 ---
-        if ! echo "$RESPONSE" | grep -q ">>>EXEC:"; then
-            # 只有 AI 正常说话时，才记录这一轮对话
-            echo "User: $USER_INPUT (time:$CURRENT_TIME)" >> "$HISTORY_FILE"
-            echo "AI: $RESPONSE" >> "$HISTORY_FILE"
+        if [ -z "$FULL_CMD" ]; then
+            msg "老师，指令解析异常，请重新下达。" "" "false"
+            exit 1
         fi
 
-        # --- 指令处理逻辑 ---
-        if echo "$RESPONSE" | grep -q ">>>EXEC:"; then
-            if [ "$cmd_ignore" = "true" ]; then
-                next_character="plana"
-                msg "普拉娜……拒绝执行此指令。理由：config文件中启用了cmd_ignore" "" "true"
-                exit 1
-            fi
-
-            FULL_CMD=$(echo "$RESPONSE" | sed -n 's/.*>>>EXEC:[[:space:]]*\(.*\)[[:space:]]*<<<.*/\1/p' | sed 's/[[:space:]]*$//')
-
-            if [ -z "$FULL_CMD" ]; then
-                msg "老师，指令解析异常，请重新下达。" "" "false"
-                exit 1
-            fi
-
-            # --- 【黑名单拦截】 ---
-            # 无论 rm 出现在哪里（开头、中间、管道后、xargs参数里），只要出现就拦截
-            # 排除掉包含 rm 的文件名（如 arm_file），只匹配独立的单词 rm
-            if echo "$FULL_CMD" | grep -qwE "(rm|mv|sudo|dd|mkfs|chmod|chown|>|>>|mkdir)"; then
-                next_character="plana"
-                msg "普拉娜……拒绝执行此指令(${FULL_CMD})。理由：指令中包含高危操作符，为了老师的安全，该操作已被拦截。" "" "true"
-                exit 1
-            fi
-
-            ALLOWED="ls cat find grep wc du date pwd tree awk xargs echo"
-            BASE_CMD=$(echo "$FULL_CMD" | awk '{print $1}')
-
-
-            # --- 优化后的白名单校验：支持管道符多级检查 ---
-            # 将指令按管道符分割，检查每一个子命令的首个单词
-            SAVE_IFS=$IFS
-            IFS='|' read -ra ADDR <<< "$FULL_CMD"
-            IFS=$SAVE_IFS # 立即恢复，防止影响后续逻辑
-            for part in "${ADDR[@]}"; do
-                # 去除前导空格并取第一个词
-                SUB_BASE=$(echo "$part" | xargs | awk '{print $1}')
-                ALLOWED_LIST="ls cat find grep wc du date pwd tree awk xargs echo"
-                
-                if [[ ! " $ALLOWED_LIST " =~ " $SUB_BASE " ]]; then
-                    next_character="plana"
-                    msg "拦截到未授权子指令: '$SUB_BASE' full: '$FULL_CMD'" "" "true"
-                    exit 1
-                fi
-            done
-
+        # --- 【黑名单拦截】 ---
+        # 无论 rm 出现在哪里（开头、中间、管道后、xargs参数里），只要出现就拦截
+        # 排除掉包含 rm 的文件名（如 arm_file），只匹配独立的单词 rm
+        if echo "$FULL_CMD" | grep -qwE "(rm|mv|sudo|dd|mkfs|chmod|chown|>|>>|mkdir)"; then
             next_character="plana"
-            msg "正在执行指令: ${C_CODE_DISPLAY}${FULL_CMD}${NC}" "" "false" 
+            msg "普拉娜……拒绝执行此指令(${FULL_CMD})。理由：指令中包含高危操作符，为了老师的安全，该操作已被拦截。" "" "true"
+            exit 1
+        fi
 
-            if [ "$cmd" = "secure" ]; then 
+        ALLOWED="ls cat find grep wc du date pwd tree awk xargs echo"
+        BASE_CMD=$(echo "$FULL_CMD" | awk '{print $1}')
+
+        # --- 优化后的白名单校验：支持管道符多级检查 ---
+        # 将指令按管道符分割，检查每一个子命令的首个单词
+        SAVE_IFS=$IFS
+        IFS='|' read -ra ADDR <<<"$FULL_CMD"
+        IFS=$SAVE_IFS # 立即恢复，防止影响后续逻辑
+        for part in "${ADDR[@]}"; do
+            # 去除前导空格并取第一个词
+            SUB_BASE=$(echo "$part" | xargs | awk '{print $1}')
+            ALLOWED_LIST="ls cat find grep wc du date pwd tree awk xargs echo"
+
+            if [[ ! " $ALLOWED_LIST " =~ " $SUB_BASE " ]]; then
                 next_character="plana"
-                msg "老师，真的要执行这条指令吗？(y/n):" "" "false"
-
-                read -r USER_CONFIRM
-                if [ "$USER_CONFIRM" != "y" ] && [ "$USER_CONFIRM" != "Y" ]; then
-                    next_character="plana"
-                    msg "明白了。已经取消了该指令的操作。" "" "false"
-                    exit 0
-                fi
-            elif [ "$cmd" = "free" ]; then 
-                # just execute
-                msg "执行中……" "" "false"
-            else
-                echo "invalid config:cmd!"
+                msg "拦截到未授权子指令: '$SUB_BASE' full: '$FULL_CMD'" "" "true"
                 exit 1
             fi
+        done
 
-            echo "------------------------------------------"
-            bash -c "$FULL_CMD"
-            echo "------------------------------------------"
+        next_character="plana"
+        msg "正在执行指令: ${C_CODE_DISPLAY}${FULL_CMD}${NC}" "" "false"
+
+        if [ "$cmd" = "secure" ]; then
+            next_character="plana"
+            msg "老师，真的要执行这条指令吗？(y/n):" "" "false"
+
+            read -r USER_CONFIRM
+            if [ "$USER_CONFIRM" != "y" ] && [ "$USER_CONFIRM" != "Y" ]; then
+                next_character="plana"
+                msg "明白了。已经取消了该指令的操作。" "" "false"
+                exit 0
+            fi
+        elif [ "$cmd" = "free" ]; then
+            # just execute
+            msg "执行中……" "" "false"
         else
-            # 正常回复
-            msg "$RESPONSE" "" "false"
+            echo "invalid config:cmd!"
+            exit 1
         fi
-        ;;
 
+        echo "------------------------------------------"
+        bash -c "$FULL_CMD"
+        echo "------------------------------------------"
+    else
+        # 正常回复
+        msg "$RESPONSE" "" "false"
+    fi
+    ;;
 
-
-    *)
-			if [ "$next_character" = "plana" ]; then
+*)
+    if [ "$next_character" = "plana" ]; then
         case $((RANDOM % 2)) in
-            0) msg "混乱……该行动无法理解……请不要戳我，会出现故障" "logic_error.wav" "false";;
-            1) msg "我明白了，老师现在无事可做，很无聊" "boring.wav" "false";;
+        0) msg "混乱……该行动无法理解……请不要戳我，会出现故障" "logic_error.wav" "false" ;;
+        1) msg "我明白了，老师现在无事可做，很无聊" "boring.wav" "false" ;;
         esac
-			else
-				case $((RANDOM % 3)) in
-						0) msg "偶尔也要考虑一下身体状况，我很担心老师的健康！" "care.wav" "false";;
-						1) msg "有很多必须要解决的工作呢,成年人还真是不容易" "not_easy.wav" "false";;
-						2) msg "哇……工作量也太多了" "too_many.wav" "false";;
-				esac
-			fi
+    else
+        case $((RANDOM % 3)) in
+        0) msg "偶尔也要考虑一下身体状况，我很担心老师的健康！" "care.wav" "false" ;;
+        1) msg "有很多必须要解决的工作呢,成年人还真是不容易" "not_easy.wav" "false" ;;
+        2) msg "哇……工作量也太多了" "too_many.wav" "false" ;;
+        esac
+    fi
 
-        ;;
+    ;;
 esac

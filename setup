@@ -17,16 +17,16 @@ safe_backup() {
             echo "\033[1;32m--- 即将存入的内容 (Current) ---\033[0m"
             tail -n 8 "$target_file"
             echo "\033[1;32m-------------------------------\033[0m"
-            
+
             printf "\033[1;36m是否覆盖旧的备份文件？(y/n): \033[0m"
             # 兼容各种 Shell 的 read 写法
             read confirm
-            
+
             # 使用标准的 [ ] 语法进行字符串比较
             if [ "$confirm" = "n" ] || [ "$confirm" = "N" ]; then
                 printf "\033[0;90m[Plana]\033[0m 已取消覆盖。当前数据未备份。\n"
                 return 1
-            elif  [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+            elif [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
                 mv "$target_file" "$bak_file"
                 return 0
             else
@@ -38,7 +38,10 @@ safe_backup() {
 }
 
 # 1. 环境准备
-SHITTIM_DIR=$(cd "$(dirname "$0")"; pwd)
+SHITTIM_DIR=$(
+    cd "$(dirname "$0")"
+    pwd
+)
 BASHRC="$HOME/.bashrc"
 BACKUP_BASHRC="$HOME/.bashrc.shittim.bak"
 
@@ -69,7 +72,7 @@ if safe_backup "$CONFIG_FILE"; then
     echo "\033[0;90m[Plana]\033[0m 配置文件已备份。"
 fi
 
-cat << EOF > "$CONFIG_FILE"
+cat <<EOF >"$CONFIG_FILE"
 silent=false
 is_exit=false
 characteristic=standard
@@ -83,7 +86,7 @@ EOF
 # 5. 配置～/.bashrc
 sed -i '/# >>> SHITTIM BOX CONFIG START >>>/,/# <<< SHITTIM BOX CONFIG END <<</d' "$BASHRC"
 # 在配置块内重新定义 color_prompt，以覆盖文件前部的 unset 操作
-cat << EOF >> "$BASHRC"
+cat <<EOF >>"$BASHRC"
 
 # >>> SHITTIM BOX CONFIG START >>>
 # 什亭之匣沉浸式视觉与功能配置区

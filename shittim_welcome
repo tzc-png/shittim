@@ -1,53 +1,53 @@
 #!/bin/bash
 
 # ==================== 配置区域 ====================
-SCRIPT_DIR=$(cd "$(dirname "$0")"; pwd)
+SCRIPT_DIR=$(
+	cd "$(dirname "$0")"
+	pwd
+)
 
 # 使用相对脚本位置的路径进行加载 [cite: 1, 28]
 source "${SCRIPT_DIR}/shittim_lib"
 VOICE_BASE="${SCRIPT_DIR}/voice/shittim_welcome"
-
-
 
 # ==================== 逻辑处理 ====================
 HOUR=$(date +%H)
 
 # 1. 特殊时段优先 (直接输出并退出)
 if [ $HOUR -ge 23 ] || [ $HOUR -lt 5 ]; then
-		msg "老师，现在已经是深夜了，请务必注意休息" "late_night_warning.wav" "true"
-		exit 0
+	msg "老师，现在已经是深夜了，请务必注意休息" "late_night_warning.wav" "true"
+	exit 0
 elif [ $HOUR -ge 5 ] && [ $HOUR -lt 8 ]; then
-		msg "老师起得真早呢，请注意保暖" "morning_warning.wav" "true"
-		exit 0
+	msg "老师起得真早呢，请注意保暖" "morning_warning.wav" "true"
+	exit 0
 elif [ $HOUR -ge 21 ] && [ $HOUR -lt 23 ]; then
-		msg "老师……该休息了" "night_warning.wav" "true"
-		exit 0
+	msg "老师……该休息了" "night_warning.wav" "true"
+	exit 0
 fi
-
 
 # 2. 正常时段：提示语池
 if [ "$next_character" = "plana" ]; then
 	HINTS=(
-		  "老师可以在这里处理各种工作"
-			"你要做哪些工作呢，老师？"
-			"正在待命，需要解决的任务还有很多"
-			"请选择您需要执行的工作"
-			"这些是需要执行的工作，那就拜托您了"
-			"到工作开始的时间了，老师……"
-			"确认连接"
-			"老师，等您很久了"
+		"老师可以在这里处理各种工作"
+		"你要做哪些工作呢，老师？"
+		"正在待命，需要解决的任务还有很多"
+		"请选择您需要执行的工作"
+		"这些是需要执行的工作，那就拜托您了"
+		"到工作开始的时间了，老师……"
+		"确认连接"
+		"老师，等您很久了"
 	)
 	H_VOICES=("work_1.wav" "work_2.wav" "work_3.wav" "work_4.wav" "work_5.wav" "work_6.wav" "connect.wav" "wait_long.wav")
 else
 	HINTS=(
-			"在这里可以展开老师的各项工作！"
-			"我一直在等您！"
-			"来吧，是开始工作的时间了！"
-			"老师，要从哪项工作开始呢？"
-			"我来协助老师完成工作！"
-			"请选择您想进行的工作，我会在您身边协助！"
-			"需要解决的事情很多呢！一起加油吧！"
-		)
+		"在这里可以展开老师的各项工作！"
+		"我一直在等您！"
+		"来吧，是开始工作的时间了！"
+		"老师，要从哪项工作开始呢？"
+		"我来协助老师完成工作！"
+		"请选择您想进行的工作，我会在您身边协助！"
+		"需要解决的事情很多呢！一起加油吧！"
+	)
 	H_VOICES=("work_1.wav" "wait.wav" "work_2.wav" "work_3.wav" "work_4.wav" "work_5.wav" "many.wav")
 fi
 

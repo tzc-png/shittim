@@ -94,7 +94,7 @@ source ~/.bashrc
 1. **silent** 默认设置为false，设置为 true 可全局静音语音反馈
 2. **is_exit** 默认设置为false，若设置为 true 将使脚本停止所有响应
 3. **characteristic**默认设置为standard,此设置用来选择prompt,有shy,standard,sweet三个选项
-4. **next_character** 决定下一次触发时出现的角色（plana 或 arona），不必设置，因为两小只会交替出现
+4. **next_character** 决定下一次触发时出现的角色（plana 或 arona），不必设置，因为除了plana指令以外两小只都会交替出现
 5. **cmd**默认设置为secure（强烈建议）,这样每次执行指令之前都会要求确认。若设置为free,则执行指令无须确认。
 6. **cmd_ignore**默认设置为true（建议），即禁用指令执行功能。若想要使用指令执行功能，写入false
 7. **memory**默认为recent,也可以设置为recall（plana会回忆与你更加久远的对话）

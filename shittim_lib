@@ -1,16 +1,19 @@
 #!/bin/bash
 
 # ==================== 1. 颜色配置 ====================
-C_PREFIX_P="\033[0;90m" # 普拉娜：灰色
+C_PREFIX_P="\033[0;90m"             # 普拉娜：灰色
 C_PREFIX_A="\033[38;2;100;251;252m" # 阿罗娜：蓝色
-C_ALERT="\033[1;31m"    # 警告文本：红色
-C_DEBUG="\033[1;35m"    # 调试文本：紫色
-NC="\033[0m"          # 重置颜色
+C_ALERT="\033[1;31m"                # 警告文本：红色
+C_DEBUG="\033[1;35m"                # 调试文本：紫色
+NC="\033[0m"                        # 重置颜色
 C_CODE_DISPLAY="\033[1;32m"
 
 # ==================== 2. 路径配置 ====================
 # 使用绝对路径确保在任何目录下调用都有效
-SHITTIM_ROOT=$(cd "$(dirname "$0")"; pwd)
+SHITTIM_ROOT=$(
+    cd "$(dirname "$0")"
+    pwd
+)
 CONFIG_FILE="${SHITTIM_ROOT}/config/config"
 
 silent=false
@@ -34,32 +37,32 @@ fi
 msg() {
     local text="$1"
     local voice_file="$2"
-    local is_alert="$3" # 新增：第三个参数判定是否为警告 
-    
+    local is_alert="$3" # 新增：第三个参数判定是否为警告
+
     # 1. 确定当前执行者
     local current_char=$next_character
     local prefix=""
     local voice_path=""
-    
+
     if [ "$current_char" = "arona" ]; then
-        prefix="${C_PREFIX_A}[Arona]${NC}" # 使用阿罗娜前缀 
+        prefix="${C_PREFIX_A}[Arona]${NC}" # 使用阿罗娜前缀
         voice_path="${VOICE_BASE}/arona/${voice_file}"
         next_char_to_save="plana"
     else
-        prefix="${C_PREFIX_P}[Plana]${NC}" # 使用普拉娜前缀 
+        prefix="${C_PREFIX_P}[Plana]${NC}" # 使用普拉娜前缀
         voice_path="${VOICE_BASE}/plana/${voice_file}"
         next_char_to_save="arona"
     fi
 
     # 2. 确定文本颜色逻辑
-	if [ "$current_char" = "plana" ]; then
-		local display_color="${C_PREFIX_P}"
-	else
-		local display_color="${C_PREFIX_A}"
-	fi
+    if [ "$current_char" = "plana" ]; then
+        local display_color="${C_PREFIX_P}"
+    else
+        local display_color="${C_PREFIX_A}"
+    fi
 
     if [ "$is_alert" = "true" ]; then
-        display_color="${C_ALERT}" # 如果是警告，强制设为红色 
+        display_color="${C_ALERT}" # 如果是警告，强制设为红色
     fi
 
     # 3. 打印文字
@@ -68,20 +71,20 @@ msg() {
     if [ "$voice_file" = "" ]; then
         sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
         next_character=$next_char_to_save
-        return 
+        return
     fi
-    
+
     # 4. 音频处理
     if [ "$silent" != "true" ] && [ -n "$voice_file" ]; then
         if [ -f "$voice_path" ]; then
-            # 仅杀掉当前角色的播放进程，实现交替不打断 
+            # 仅杀掉当前角色的播放进程，实现交替不打断
             # pkill -f "ffplay.*${current_char}" > /dev/null 2>&1
-            pkill -f "paplay.*${current_char}" > /dev/null 2>&1
+            pkill -f "paplay.*${current_char}" >/dev/null 2>&1
 
             # 核心改进：合并唤醒与播放
             # 用 { 语句1; 语句2; } & 的方式，让整个序列在后台运行
-            { 
-                paplay --client-name="${current_char}" "$voice_path" > /dev/null 2>&1
+            {
+                paplay --client-name="${current_char}" "$voice_path" >/dev/null 2>&1
             } &
 
         else
@@ -89,7 +92,7 @@ msg() {
         fi
     fi
 
-    # 5. 更新角色状态到 config 文件 
+    # 5. 更新角色状态到 config 文件
     sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
     next_character=$next_char_to_save
 }
@@ -97,7 +100,7 @@ msg() {
 # 日志合法性检查与自动修复函数 (协议：User 必须领先且成对出现)
 check_and_fix_log() {
     local history_file="${SHITTIM_ROOT}/history/plana_history.log"
-    
+
     # 如果文件不存在或为空，无需修复
     [ ! -s "$history_file" ] && return 0
 
@@ -130,8 +133,8 @@ check_and_fix_log() {
             if [ "$current_role" != "$last_role" ]; then
                 if [ "$current_role" = "AI" ]; then
                     # 成功配对：将 User 和 AI 同时写入临时文件
-                    echo "$buffer" >> "$tmp_file"
-                    echo "$line" >> "$tmp_file"
+                    echo "$buffer" >>"$tmp_file"
+                    echo "$line" >>"$tmp_file"
                     buffer="" # 清空缓冲
                     last_role="AI"
                 else
@@ -148,14 +151,14 @@ check_and_fix_log() {
                 fi
             fi
         fi
-    done < "$history_file"
+    done <"$history_file"
 
     # 覆盖原文件
     if [ -f "$tmp_file" ]; then
         mv "$tmp_file" "$history_file"
     else
         # 如果修复后什么都没剩下，则清空原文件
-        > "$history_file"
+        >"$history_file"
     fi
 }
 
@@ -172,7 +175,7 @@ get_history() {
     # --- 参数合法性强校验 ---
     if [[ "$mode" != "recent" && "$mode" != "recall" ]]; then
         echo -e "\033[1;31m[Error]\033[0m get_history 参数错误: 未知的模式 '$mode'" >&2
-        exit 1 
+        exit 1
         # 直接终止整个程序执行
     fi
 
@@ -185,16 +188,16 @@ get_history() {
     fi
 
     # 1. 基础数据统计
-    local total_lines=$(wc -l < "$history_file")
-    local valid_total=$(( total_lines / 2 * 2 )) # 确保是偶数对
-    local total_pairs=$(( valid_total / 2 ))
-    local requested_total=$(( n1 + n2 ))
+    local total_lines=$(wc -l <"$history_file")
+    local valid_total=$((total_lines / 2 * 2)) # 确保是偶数对
+    local total_pairs=$((valid_total / 2))
+    local requested_total=$((n1 + n2))
 
     # 2. 逻辑分水岭：如果请求总量 >= 实际总量，或者模式为 recent
     if [ "$mode" = "recent" ] || [ "$requested_total" -ge "$total_pairs" ]; then
         if [ "$mode" = "recent" ]; then
             # recent 模式依然遵循 n1 的限制
-            local n1_lines=$(( n1 * 2 ))
+            local n1_lines=$((n1 * 2))
             tail -n "$n1_lines" "$history_file"
         else
             # recall 模式但数据量不足：直接输出文件所有有效内容
@@ -205,20 +208,20 @@ get_history() {
 
     echo "（下面是之前的对话）"
     # 3. 核心 Recall 逻辑 (仅在数据充足时触发)
-    local n1_lines=$(( n1 * 2 ))
-    local recent_start_line=$(( valid_total - n1_lines + 1 ))
-    local pool_pairs=$(( (recent_start_line - 1) / 2 ))
+    local n1_lines=$((n1 * 2))
+    local recent_start_line=$((valid_total - n1_lines + 1))
+    local pool_pairs=$(((recent_start_line - 1) / 2))
 
     # 随机抽取 n2 对并保持顺序
     local random_indices=$(seq 1 "$pool_pairs" | shuf -n "$n2" | sort -n)
     for idx in $random_indices; do
-        local start=$(( (idx - 1) * 2 + 1 ))
+        local start=$(((idx - 1) * 2 + 1))
         sed -n "${start},$((start + 1))p" "$history_file"
     done
-    
+
     # 只有在这里才会出现记忆断层
     echo "（下面是最近的对话）"
-    
+
     # 输出最近的 n1 对
     tail -n "$n1_lines" "$history_file"
 }
@@ -227,7 +230,7 @@ get_history() {
 # 参数 $1: 原始历史记录变量名 (建议直接传入内容)
 context_auto_reset() {
     local raw_history="$1"
-    
+
     # 1. 提取最后一条记录的时间戳 (匹配格式如 2026-04-13 09:06:14)
     # 使用 grep 和 tail 确保拿到最后一行的时间
     local last_time_str=$(echo "$raw_history" | grep -oP '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}' | tail -n 1)
