@@ -1,0 +1,8 @@
+silent=false
+is_exit=false
+characteristic=standard
+next_character="arona"
+cmd=secure
+cmd_ignore=false
+memory=recent
+model=qwen2.5:14b

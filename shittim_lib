@@ -11,16 +11,16 @@ C_CODE_DISPLAY="\033[1;32m"
 # ==================== 2. 路径配置 ====================
 # 使用绝对路径确保在任何目录下调用都有效
 SHITTIM_ROOT=$(cd "$(dirname "$0")"; pwd)
-CONFIG_FILE="${SHITTIM_ROOT}/config"
+CONFIG_FILE="${SHITTIM_ROOT}/config/config"
 
 silent=false
-next_character="plana"
-vscode_play=false
+next_character=plana
 characteristic=shy
 is_exit=false
 cmd=secure
 cmd_ignore=true
 memory=recent
+model=qwen2.5:7b
 
 if [ -f "${CONFIG_FILE}" ]; then
     source "${CONFIG_FILE}"
@@ -69,15 +69,6 @@ msg() {
         sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
         next_character=$next_char_to_save
         return 
-    fi
-
-    # vscode 中默认屏蔽
-    if [ "$vscode_play" = "false" ]; then
-        if [ "$TERM_PROGRAM" = "vscode" ]; then
-            sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
-            next_character=$next_char_to_save
-            return 
-        fi
     fi
     
     # 4. 音频处理
