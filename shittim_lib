@@ -24,6 +24,18 @@ cmd=secure
 cmd_ignore=true
 memory=recent
 model=qwen2.5:7b
+voice=false
+translate_model=translategemma:4b
+venv="your/path"
+voice_api="your/path"
+
+voice_tmp="${SHITTIM_ROOT}/voice/gpt-sovits/plana/tmp.wav"
+model_ckpt="${SHITTIM_ROOT}/voice/gpt-sovits/models/Plana-e15.ckpt"
+model_pth="${SHITTIM_ROOT}/voice/gpt-sovits/models/Plana_e16_s208.pth"
+refer_wav="${SHITTIM_ROOT}/voice/gpt-sovits/references/New_NP0035_Work_Talk_5.wav"
+refer_txt="理解しました，先生は今，特にやるべきことはないですね，暇なんですね。"
+language="ja"
+log_path="${SHITTIM_ROOT}/history/api.log"
 
 if [ -f "${CONFIG_FILE}" ]; then
     source "${CONFIG_FILE}"

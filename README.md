@@ -79,6 +79,36 @@ source ~/.bashrc
 
 ---
 
+## 更多功能 (Extended Features)
+
+目前已经实现了plana指令自动合成语音的功能，为了调用它，你需要（以下进阶功能配置较难）：
+1. 在自己的linux系统上部署 GPT-SoVITS：https://github.com/RVC-Boss/GPT-SoVITS （可能要相应补充一些库）
+2. 下载额外的模型
+```bash
+ollama pull translategemma:4b
+ollama pull translategemma:12b
+```
+3. (config)设置voice=true
+4. (shittim_lib)venv设置为自己的虚拟环境的python，voice_api设置为GPT-SoVITS中的api.py路径
+5. 尝试运行以下代码无误（需要按需更改路径）:
+```bash
+python api.py -dr "1.wav" -dt "先生の接続プロセスを确认。よろしくお願いします。" -dl "ja" > api.log 2>&1 &
+
+curl -X POST "http://127.0.0.1:9880/set_model"   -H "Content-Type: application/json"   -d '{
+    "gpt_model_path": "/home/tzc/my_software/shittim/voice/gpt-sovits/models/Plana-e15.ckpt",
+    "sovits_model_path": "/home/tzc/my_software/shittim/voice/gpt-sovits/models/Plana_e16_s208.pth"
+  }'
+
+curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d '{
+    "text": "どの仕事を始めますか、先生。",
+    "text_language": "ja"                                                                          
+  }' --output ./test/out.wav
+```
+
+* 当然，即使老师完成了以上所有这些，最后综合效果也未必一定好：主要原因是语音的情绪未必正确、输出速度可能过慢
+
+---
+
 ## ⚠️ 注意事项 (Notes)
 
 1. **路径自适应:** 脚本会自动识别自身所在位置。请确保 `shittim_lib` 与主脚本处于同一目录下
@@ -90,6 +120,7 @@ source ~/.bashrc
 
 ## ⚙️ 设置 (Settings)
 
+设置的内容存在4个地方确认：config,README.md,setup,shittim_lib
 老师可以通过编辑config进行设置
 1. **silent** 默认设置为false，设置为 true 可全局静音语音反馈
 2. **is_exit** 默认设置为false，若设置为 true 将使脚本停止所有响应
@@ -98,10 +129,10 @@ source ~/.bashrc
 5. **cmd**默认设置为secure（强烈建议）,这样每次执行指令之前都会要求确认。若设置为free,则执行指令无须确认。
 6. **cmd_ignore**默认设置为true（建议），即禁用指令执行功能。若想要使用指令执行功能，写入false
 7. **memory**默认为recent,也可以设置为recall（plana会回忆与你更加久远的对话）
-8. **model**默认为qwen2.5:7b 也可以设置为qwen2.5:14b
+8. **model**默认为qwen2.5:7b 也可以设置为qwen2.5:14b 也可设置为ollama可以调用的其他模型
+9. **voice**默认为false，设置为true开启翻译
+10. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
+11. **venv**填入虚拟环境的python路径，如：venv="/home/xxx/venvs/gpt-sovits/bin/python"
+12. **voice_api**填入GPT-SoVITS的api.py的路径，如：voice_api="/home/xxx/my_software/GPT-SoVITS/api.py"
 
 ---
-
-## 之后可能的更新
-1. 为plana功能也附加语音（不会有老师没发现大部分指令输入之后都有语音输出吧……前辈……）
-2. 更合适的prompt（哇……工作量也太多了……想喝草莓牛奶……）

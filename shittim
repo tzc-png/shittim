@@ -144,24 +144,6 @@ case "$1" in
     ;;
 
 "plana")
-    # --- 检查当前运行模型 ---
-    CURRENT_MODEL=$(ollama ps | awk 'NR==2 {print $1}')
-
-    if [ -n "$CURRENT_MODEL" ] && [ "$CURRENT_MODEL" != "$model" ]; then
-        msg "检测到当前正在运行模型: $CURRENT_MODEL" "" "false"
-        msg "是否停止该模型并切换到 $model ? (y/n):" "" "false"
-        read -r confirm
-
-        if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-            msg "正在停止模型: $CURRENT_MODEL" "" "false"
-            ollama stop "$CURRENT_MODEL"
-        elif [ "$confirm" = "n" ] || [ "$confirm" = "N" ]; then
-            msg "已取消操作" "" "false"
-        else
-            echo "unexpected"
-            exit 1
-        fi
-    fi
 
     # 检测ollama是否存在
     if ! command -v ollama &>/dev/null; then
@@ -231,8 +213,9 @@ case "$1" in
     # 存储逻辑：只有非指令回复才记录 ---
     if ! echo "$RESPONSE" | grep -q ">>>EXEC:"; then
         # 只有 AI 正常说话时，才记录这一轮对话
+        RESPONSE_SAVE=$(echo "${RESPONSE}" | tr -d '\n\r\t ')
         echo "User: $USER_INPUT (time:$CURRENT_TIME)" >>"$HISTORY_FILE"
-        echo "AI: $RESPONSE" >>"$HISTORY_FILE"
+        echo "AI: $RESPONSE_SAVE" >>"$HISTORY_FILE"
     fi
 
     # --- 指令处理逻辑 ---
@@ -304,7 +287,65 @@ case "$1" in
         bash -c "$FULL_CMD"
         echo "------------------------------------------"
     else
-        # 正常回复
+        # 回复语音
+        if [ "$voice" = "true" ]; then
+            rm -f ${voice_tmp}
+
+            RESPONSE_CLEAN=$(echo "$RESPONSE" | sed -E 's/\([^()]*\)|（[^（）]*）//g')
+
+            TRANSLATE_RESULT=$(ollama run ${translate_model} \
+                "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}")
+
+            TRANSLATE_RESULT=$(echo "${TRANSLATE_RESULT}" | tr -d '\n\r\t ')
+
+            echo $TRANSLATE_RESULT
+
+            # 启动服务（仅一次）
+            if ! pgrep -f "api.py" >/dev/null; then
+                ${venv} ${voice_api} \
+                    -dr "${refer_wav}" \
+                    -dt "${refer_txt}" \
+                    -dl "${language}" \
+                    >"$log_path" 2>&1 &
+
+                # 等待服务就绪
+                msg "正在启动GPT-SoVits，请稍候……" "" "false"
+
+                until curl -s http://127.0.0.1:9880 >/dev/null; do
+                    sleep 1
+                done
+
+                # 切换模型
+                curl -s -o /dev/null -X POST "http://127.0.0.1:9880/set_model" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"gpt_model_path\":\"${model_ckpt}\",\"sovits_model_path\":\"${model_pth}\"}"
+
+                sleep 1
+            fi
+
+            # TTS
+            if [[ "${voice_tmp}" != *.wav ]]; then
+                echo "[Error] voice_tmp 必须以 .wav 结尾: ${voice_tmp}"
+                exit 1
+            fi
+
+            curl -s -X POST "http://127.0.0.1:9880/" \
+                -H "Content-Type: application/json" \
+                -d "{\"text\":\"${TRANSLATE_RESULT}\",\"text_language\":\"${language}\"}" \
+                --output "${voice_tmp}"
+
+            if [ -f "$voice_tmp" ]; then
+                pkill -f "paplay.*plana" >/dev/null 2>&1
+                {
+                    paplay --client-name="plana" "$voice_tmp" >/dev/null 2>&1
+                } &
+            else
+                echo -e "${C_DEBUG}[Debug] 找不到音频: ${voice_tmp}${NC}"
+                exit 1
+            fi
+        fi
+
+        # 回复文字
         msg "$RESPONSE" "" "false"
     fi
     ;;

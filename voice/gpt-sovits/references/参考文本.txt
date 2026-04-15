@@ -1,0 +1,73 @@
+/root/autodl-tmp/sound/NP0035_Default_TTS.ogg.wav|sound|JA|先生
+/root/autodl-tmp/sound/NP0035_MultiFloorRaid_Enter_1_1.wav|sound|JA|認証完了
+/root/autodl-tmp/sound/NP0035_MultiFloorRaid_Enter_1_2.wav|sound|JA|ようこそ
+/root/autodl-tmp/sound/NP0035_MultiFloorRaid_Enter_2.wav|sound|JA|先生の接続プロセスを确认。よろしくお願いします。
+/root/autodl-tmp/sound/NP0035_MultiFloorRaid_Idle_1.wav|sound|JA|シッテムの箱、制约解除、プロセスペレツウザ限定稼働中。
+/root/autodl-tmp/sound/NP0035_MultiFloorRaid_Idle_2.wav|sound|JA|待机中、先生、お命令を。
+/root/autodl-tmp/sound/NP0035_MultiFloorRaid_Idle_3.wav|sound|JA|今の私は无敌です、普段の二倍は强いです。
+/root/autodl-tmp/sound/NP0035_MultiFloorRaid_Idle_4.wav|sound|JA|アロナ先輩と力を合わせて、先生をサポートします。
+/root/autodl-tmp/sound/NP0035_R53_2_Battle_Phase2_1.ogg.wav|sound|JA|戦況を確認、対応タイプを変更。
+/root/autodl-tmp/sound/NP0035_R53_2_Battle_in_1_1.ogg.wav|sound|JA|目標を識別、シッテムの箱を確認。 対応レベルを最大に設定します。
+/root/autodl-tmp/sound/NP0035_R53_2_Battle_in_2_1.ogg.wav|sound|JA|目標を識別、 メインオペレータシステム、ARONAを確認。
+/root/autodl-tmp/sound/NP0035_R53_MainScenario_Battle_2.ogg.wav|sound|JA|目標の識別を完了、最終局面、緊急対応が必要。
+/root/autodl-tmp/sound/NP0035_R53_MainScenario_Battle_7.ogg.wav|sound|JA|ウトナピシュティムよりエネルギを探知、回避を！
+/root/autodl-tmp/sound/NP0035_Work_AronaSleepPeek_In_1_2.ogg.wav|sound|JA|寝ているのでしょうか？
+/root/autodl-tmp/sound/NP0035_Work_AronaSleepPeek_In_2_2.ogg.wav|sound|JA|やはり、寝てますね。
+/root/autodl-tmp/sound/NP0035_Work_AronaSleepSit_In_1_2.ogg.wav|sound|JA|イチゴミルク？
+/root/autodl-tmp/sound/NP0035_Work_AronaSleepSit_In_2_2.ogg.wav|sound|JA|先輩、そろそろ起きないと。
+/root/autodl-tmp/sound/NP0035_Work_AronaSleepSit_Talk_4_2.ogg.wav|sound|JA|本当ですか？
+/root/autodl-tmp/sound/NP0035_Work_Cabinet_In_1.ogg.wav|sound|JA|ここは、そういうことなのですね。
+/root/autodl-tmp/sound/NP0035_Work_Cabinet_In_2.ogg.wav|sound|JA|そういうことですね。
+/root/autodl-tmp/sound/NP0035_Work_Cabinet_Talk_1.ogg.wav|sound|JA|うん…なるほど。
+/root/autodl-tmp/sound/NP0035_Work_Cabinet_Talk_2.ogg.wav|sound|JA|うん…そういう構造なんですね。
+/root/autodl-tmp/sound/NP0035_Work_In_1_1.ogg.wav|sound|JA|接続確認。
+/root/autodl-tmp/sound/NP0035_Work_In_1_2.ogg.wav|sound|JA|お待ちしておりました。
+/root/autodl-tmp/sound/NP0035_Work_In_2.ogg.wav|sound|JA|お仕事を始める時間です。
+/root/autodl-tmp/sound/NP0035_Work_In_3.ogg.wav|sound|JA|どの仕事を始めますか、先生。
+/root/autodl-tmp/sound/NP0035_Work_In_4.ogg.wav|sound|JA|待機中、 解決しなければならない作業が多数存在しています。
+/root/autodl-tmp/sound/NP0035_Work_PlanaSitPeek_Talk_1.ogg.wav|sound|JA|視線を感じます。
+/root/autodl-tmp/sound/NP0035_Work_PlanaSitPeek_Talk_2.ogg.wav|sound|JA|困ります。
+/root/autodl-tmp/sound/NP0035_Work_PlanaWatchSky_In_1_2.ogg.wav|sound|JA|あれのことですか？先輩。
+/root/autodl-tmp/sound/NP0035_Work_Talk_1.ogg.wav|sound|JA|ここで先生の様々な仕事を進行できます。
+/root/autodl-tmp/sound/NP0035_Work_Talk_2.ogg.wav|sound|JA|ご希望のお仕事を選んでください。
+/root/autodl-tmp/sound/NP0035_Work_Talk_3.ogg.wav|sound|JA|解決していただかねばならないお仕事がたくさんあります。 では、お願いします。
+/root/autodl-tmp/sound/NP0035_Work_Talk_4.ogg.wav|sound|JA|混乱，理解できない行動です。 突かないでください，故障します。
+/root/autodl-tmp/sound/NP0035_Work_Talk_5.ogg.wav|sound|JA|理解しました，先生は今，特にやるべきことはないですね，暇なんですね。
+/root/autodl-tmp/sound/NP0035_Work_Umbrella_In_1.ogg.wav|sound|JA|雨が降ったらこれで
+/root/autodl-tmp/sound/NP0035_Work_Umbrella_Talk_1.ogg.wav|sound|JA|役に立つのでしょうか
+/root/autodl-tmp/sound/NP0035_Work_Umbrella_Talk_2.ogg.wav|sound|JA|私も、一緒に…
+/root/autodl-tmp/sound/New_NP0035_Work_AronaSleepPeek_In_1_2.wav|sound|JA|寝ているの でしょうか…
+/root/autodl-tmp/sound/New_NP0035_Work_AronaSleepPeek_In_2_2.wav|sound|JA|やはり、 寝てますね…
+/root/autodl-tmp/sound/New_NP0035_Work_AronaSleepSit_In_1_2.wav|sound|JA|イチゴミルク？
+/root/autodl-tmp/sound/New_NP0035_Work_AronaSleepSit_In_2_2.wav|sound|JA|先輩、そろそろ 起きないと…
+/root/autodl-tmp/sound/New_NP0035_Work_AronaSleepSit_Talk_4_2.wav|sound|JA|本当ですか
+/root/autodl-tmp/sound/New_NP0035_Work_Cabinet_In_1.wav|sound|JA|ここは… そういうことなのですね。
+/root/autodl-tmp/sound/New_NP0035_Work_Cabinet_In_2.wav|sound|JA|そういうことですね。
+/root/autodl-tmp/sound/New_NP0035_Work_Cabinet_Talk_1.wav|sound|JA|ふむ…なるほど。
+/root/autodl-tmp/sound/New_NP0035_Work_Cabinet_Talk_2.wav|sound|JA|ふむ…… そういう構造なんですね。
+/root/autodl-tmp/sound/New_NP0035_Work_In_1_1.wav|sound|JA|接続確認。
+/root/autodl-tmp/sound/New_NP0035_Work_In_1_2.wav|sound|JA|お待ちしておりました。
+/root/autodl-tmp/sound/New_NP0035_Work_In_2.wav|sound|JA|お仕事を始める時間です。
+/root/autodl-tmp/sound/New_NP0035_Work_In_3.wav|sound|JA|どのお仕事から始めますか。 先生？
+/root/autodl-tmp/sound/New_NP0035_Work_In_4.wav|sound|JA|待機中。 解決しなければならない作業が 多数存在しています。
+/root/autodl-tmp/sound/New_NP0035_Work_PlanaSitPeek_Talk_2.wav|sound|JA|困ります。
+/root/autodl-tmp/sound/New_NP0035_Work_PlanaWatchSky_In_1_2.wav|sound|JA|あれのことですか、先輩？
+/root/autodl-tmp/sound/New_NP0035_Work_Talk_1.wav|sound|JA|ここで先生の様々なお仕事を 進行できます。
+/root/autodl-tmp/sound/New_NP0035_Work_Talk_2.wav|sound|JA|ご希望のお仕事を選んでください。
+/root/autodl-tmp/sound/New_NP0035_Work_Talk_3.wav|sound|JA|解決していただかねばならない お仕事がたくさんあります。 では、お願いします。
+/root/autodl-tmp/sound/New_NP0035_Work_Talk_4.wav|sound|JA|混乱。理解できない行動です。 つつかないでください。故障します。
+/root/autodl-tmp/sound/New_NP0035_Work_Talk_5.wav|sound|JA|理解しました。 先生は今、 特にやるべきことがないのですね。 暇なのですね。
+/root/autodl-tmp/sound/New_NP0035_Work_Umbrella_In_1.wav|sound|JA|雨が降ったらこれで…
+/root/autodl-tmp/sound/New_NP0035_Work_Umbrella_Talk_1.wav|sound|JA|役に立つのでしょうか？
+/root/autodl-tmp/sound/New_NP0035_Work_Umbrella_Talk_2.wav|sound|JA|私も…一緒に…
+/root/autodl-tmp/sound/Tutorial_260001_01.wav|sound|JA|これより、制约解除决戦に参加できます。
+/root/autodl-tmp/sound/Tutorial_260001_02.wav|sound|JA|制约解除决戦は、段階によって强くなるボスと戦う任务です。
+/root/autodl-tmp/sound/Tutorial_260001_03.wav|sound|JA|ボスを退治することで段階報酬を获得することができます。
+/root/autodl-tmp/sound/Tutorial_260002_01.wav|sound|JA|それでは、戦闘について案内しますね。
+/root/autodl-tmp/sound/Tutorial_260002_02.wav|sound|JA|まずは入场ボタンを押してください。
+/root/autodl-tmp/sound/Tutorial_260003_01.wav|sound|JA|ここでは戦闘を行うボスの段阶を确认し、选ぶことができます。
+/root/autodl-tmp/sound/Tutorial_260004_01.wav|sound|JA|段階が上がるほど、强力なボスが登场します。
+/root/autodl-tmp/sound/Tutorial_260004_02.wav|sound|JA|こちらでボスの情报を事前に确认し、准备をしましょう。
+/root/autodl-tmp/sound/Tutorial_260005_01.wav|sound|JA|戦闘はシーズンオープン中のみ、入场できます。
+/root/autodl-tmp/sound/Tutorial_260006_01.wav|sound|JA|决まった期間内に最上段階まで挑戦することは、简単ではないと思いますが。
+/root/autodl-tmp/sound/Tutorial_260006_02.wav|sound|JA|アロナ先輩と一绪に、先生をサポートします。

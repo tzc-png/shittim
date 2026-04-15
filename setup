@@ -81,6 +81,10 @@ cmd=secure
 cmd_ignore=true
 memory=recent
 model=qwen2.5:7b
+voice=false
+translate_model=translategemma:4b
+venv="your/path"
+voice_api="your/path"
 EOF
 
 # 5. 配置～/.bashrc
