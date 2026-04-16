@@ -33,7 +33,14 @@ safe_backup() {
                 echo "unexpected"
                 exit 1
             fi
+        else
+            mv "$target_file" "$bak_file"
+            echo "\033[1;32m[信息]\033[0m 初次备份成功：$bak_file"
+            return 0
         fi
+    else
+        echo "\033[1;31m[错误]\033[0m 目标文件 $target_file 不存在，无法备份。"
+        exit 1
     fi
 }
 
@@ -64,6 +71,12 @@ if safe_backup "$SECURITY_LOG"; then
     echo "\033[0;90m[Plana]\033[0m 安全日志归档成功。"
 fi
 touch "$SECURITY_LOG"
+
+API_LOG="${SHITTIM_DIR}/history/api.log"
+if safe_backup "$API_LOG"; then
+    echo "\033[0;90m[Plana]\033[0m 接口日志归档成功。"
+fi
+touch "$API_LOG"
 
 # 4. 配置文件强刷
 CONFIG_FILE="${SHITTIM_DIR}/config/config"
