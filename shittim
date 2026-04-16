@@ -246,6 +246,9 @@ case "$1" in
 
     # --- 指令处理逻辑 ---
     if echo "$RESPONSE" | grep -q ">>>EXEC:"; then
+        echo "该功能暂时关闭"
+        exit 1
+
         if [ "$cmd_ignore" = "true" ]; then
             next_character="plana"
             msg "普拉娜……拒绝执行此指令。理由：config文件中启用了cmd_ignore" "" "true"
