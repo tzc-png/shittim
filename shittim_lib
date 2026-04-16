@@ -27,7 +27,7 @@ model=qwen2.5:7b
 voice=false
 translate_model=translategemma:4b
 venv="your/path"
-voice_api="your/path"
+gpt_sovits_path="your/path"
 
 voice_tmp="${SHITTIM_ROOT}/voice/gpt-sovits/plana/tmp.wav"
 model_ckpt="${SHITTIM_ROOT}/voice/gpt-sovits/models/Plana-e15.ckpt"
@@ -278,3 +278,39 @@ context_auto_reset() {
         echo "$raw_history"
     fi
 }
+
+# ==================== 4. 模型启用 ====================
+if [ "$1" = "plana" ] && [ "$SHITTIM" = true ]; then
+    if [ "$voice" = "true" ]; then
+        # 启动服务（仅一次）
+        if ! pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
+
+            cd ${gpt_sovits_path}
+            ${venv}/bin/python ${gpt_sovits_path}/api.py -dr "${refer_wav}" -dt "${refer_txt}" -dl "${language}" >"$log_path" 2>&1 &
+            cd -
+
+            # 等待服务就绪
+            msg "正在启动GPT-SoVits，请稍候……" "" "false"
+
+            until curl -s http://127.0.0.1:9880 >/dev/null; do
+                sleep 1
+            done
+
+            JSON_PAYLOAD=$(
+                python3 - <<EOF
+import json
+
+print(json.dumps({
+    "gpt_model_path": "$model_ckpt",
+    "sovits_model_path": "$model_pth"
+}, ensure_ascii=False))
+EOF
+            )
+            curl -s -o /dev/null -X POST "http://127.0.0.1:9880/set_model" \
+                -H "Content-Type: application/json" \
+                -d "$JSON_PAYLOAD"
+
+            sleep 2
+        fi
+    fi
+fi
