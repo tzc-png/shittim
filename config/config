@@ -1,12 +1,12 @@
 silent=false
 is_exit=false
 characteristic=sweet
-next_character="plana"
+next_character="arona"
 cmd=secure
 cmd_ignore=false
 memory=recent
-model=qwen2.5:14b
+model=qwen2.5:7b
 voice=true
-translate_model=translategemma:12b
-venv="/home/tzc/venvs/gpt-sovits/bin/python"
-voice_api="/home/tzc/my_software/GPT-SoVITS/api.py"
+translate_model=translategemma:4b
+venv="/home/tzc/venvs/gpt-sovits/"
+gpt_sovits_path="/home/tzc/my_software/GPT-SoVITS"

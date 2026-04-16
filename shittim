@@ -1,6 +1,9 @@
 #!/bin/bash
 
 # ==================== 配置区域 ====================
+SHITTIM=true
+SHITTIM_WELCOME=false
+
 SCRIPT_DIR=$(
     cd "$(dirname "$0")"
     pwd
@@ -143,6 +146,28 @@ case "$1" in
     fi
     ;;
 
+"free")
+    msg "正在尝试释放所有占用的资源……" "" "false"
+
+    # 1. 停止 GPT-SoVITS 语音服务
+    if pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
+        pkill -f "${gpt_sovits_path}/api.py"
+    fi
+    msg "语音合成引擎已经关闭" "" "false"
+
+    # 2. 卸载 Ollama 加载的模型 (释放显存的核心)
+    # Ollama 默认会驻留模型，使用 /api/generate 传空模型名可强制释放
+    if pgrep -x "ollama" >/dev/null; then
+        # 这种方法最快，无需杀掉整个 ollama 服务，仅释放显存
+        ollama stop "${model}" >/dev/null 2>&1
+        ollama stop "${translate_model}" >/dev/null 2>&1
+    fi
+    msg "Ollama 模型已经关闭" "" "false"
+
+    msg "资源已完全释放。老师，辛苦了，请好好的休息吧。" "free_rest.wav" "false"
+    exit 0
+    ;;
+
 "plana")
 
     # 检测ollama是否存在
@@ -192,7 +217,8 @@ case "$1" in
               "options": {
                 "num_thread": 8,
                 "num_ctx": 4096,
-                "temperature": 0.85
+                "temperature": 0.85,
+                "repeat_penalty": 1.3
               }, 
               "stream": false}')
     elif [ "$model" = "qwen2.5:7b" ]; then
@@ -293,20 +319,19 @@ case "$1" in
 
             RESPONSE_CLEAN=$(echo "$RESPONSE" | sed -E 's/\([^()]*\)|（[^（）]*）//g')
 
+            RESPONSE_CLEAN=$(echo "$RESPONSE_CLEAN" | sed -E 's/([-]|—|——).*//g' | xargs)
+
             TRANSLATE_RESULT=$(ollama run ${translate_model} \
                 "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}")
 
             TRANSLATE_RESULT=$(echo "${TRANSLATE_RESULT}" | tr -d '\n\r\t ')
 
-            echo $TRANSLATE_RESULT
-
             # 启动服务（仅一次）
-            if ! pgrep -f "api.py" >/dev/null; then
-                ${venv} ${voice_api} \
-                    -dr "${refer_wav}" \
-                    -dt "${refer_txt}" \
-                    -dl "${language}" \
-                    >"$log_path" 2>&1 &
+            if ! pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
+
+                cd ${gpt_sovits_path}
+                ${venv}/bin/python ${gpt_sovits_path}/api.py -dr "${refer_wav}" -dt "${refer_txt}" -dl "${language}" >"$log_path" 2>&1 &
+                cd -
 
                 # 等待服务就绪
                 msg "正在启动GPT-SoVits，请稍候……" "" "false"
@@ -315,12 +340,21 @@ case "$1" in
                     sleep 1
                 done
 
-                # 切换模型
+                JSON_PAYLOAD=$(
+                    python3 - <<EOF
+import json
+
+print(json.dumps({
+    "gpt_model_path": "$model_ckpt",
+    "sovits_model_path": "$model_pth"
+}, ensure_ascii=False))
+EOF
+                )
                 curl -s -o /dev/null -X POST "http://127.0.0.1:9880/set_model" \
                     -H "Content-Type: application/json" \
-                    -d "{\"gpt_model_path\":\"${model_ckpt}\",\"sovits_model_path\":\"${model_pth}\"}"
+                    -d "$JSON_PAYLOAD"
 
-                sleep 1
+                sleep 2
             fi
 
             # TTS
@@ -329,23 +363,38 @@ case "$1" in
                 exit 1
             fi
 
-            curl -s -X POST "http://127.0.0.1:9880/" \
-                -H "Content-Type: application/json" \
-                -d "{\"text\":\"${TRANSLATE_RESULT}\",\"text_language\":\"${language}\"}" \
-                --output "${voice_tmp}"
+            # --- 推理部分 ---
+            JSON_PAYLOAD=$(python3 -c "import json; print(json.dumps({'text': '$TRANSLATE_RESULT', 'text_language': '$language'}, ensure_ascii=False))")
 
-            if [ -f "$voice_tmp" ]; then
+            # 增加 --connect-timeout 防止死锁
+            # 增加 --retry 确保由于瞬时显存波动导致的失败能重试
+            curl -L -s -X POST "http://127.0.0.1:9880/" \
+                -H "Content-Type: application/json" \
+                -d "$JSON_PAYLOAD" \
+                --connect-timeout 10 \
+                --max-time 60 \
+                -o "${voice_tmp}"
+
+            # 检查 curl 的退出状态码
+            if [ $? -ne 0 ] || [ ! -s "${voice_tmp}" ]; then
+                echo -e "${C_DEBUG}[Error] GPT-SoVITS 推理失败或音频文件为空。${NC}"
+                echo -e "${C_DEBUG}[Tip] 请检查 $log_path 查看后端报错（可能是显存不足 OOM）。${NC}"
+                # 如果失败了，不要退出脚本，让普拉娜至少能把文字说出来
+                voice="false"
+                exit 1
+            fi
+
+            if [ "$voice" = "true" ] && [ -f "$voice_tmp" ]; then
+                # ... 原有的 paplay 逻辑 ...
                 pkill -f "paplay.*plana" >/dev/null 2>&1
                 {
                     paplay --client-name="plana" "$voice_tmp" >/dev/null 2>&1
                 } &
-            else
-                echo -e "${C_DEBUG}[Debug] 找不到音频: ${voice_tmp}${NC}"
-                exit 1
             fi
         fi
 
         # 回复文字
+        next_character=plana
         msg "$RESPONSE" "" "false"
     fi
     ;;

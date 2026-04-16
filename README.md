@@ -75,7 +75,8 @@ source ~/.bashrc
 * `ls / find`: 文件检索与目录扫描
 * `rain`: 关于下雨天的特别备注
 * 老师也可以在终端直接输入 `shittim` ：输出一些预置的文本
-* `shittim plana <str>`: 普拉娜会以文静、理性的性格与您互动。
+* `shittim plana <str>`: 普拉娜会与您互动。
+* `free`: 释放 shittim plana <str> 的资源
 
 ---
 
@@ -89,7 +90,7 @@ ollama pull translategemma:4b
 ollama pull translategemma:12b
 ```
 3. (config)设置voice=true
-4. (shittim_lib)venv设置为自己的虚拟环境的python，voice_api设置为GPT-SoVITS中的api.py路径
+4. (shittim_lib)venv设置为自己的虚拟环境，gpt_sovits_path设置为GPT-SoVITS的路径
 5. 尝试运行以下代码无误（需要按需更改路径）:
 ```bash
 python api.py -dr "1.wav" -dt "先生の接続プロセスを确认。よろしくお願いします。" -dl "ja" > api.log 2>&1 &
@@ -104,8 +105,8 @@ curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d
     "text_language": "ja"                                                                          
   }' --output ./test/out.wav
 ```
-
-* 当然，即使老师完成了以上所有这些，最后综合效果也未必一定好：主要原因是语音的情绪未必正确、输出速度可能过慢
+* 完成以上配置之后，不排除仍然存在一些依赖问题，可能需要自己调整
+* 当然，即使老师完成了以上所有这些，最后综合效果也未必一定好：主要原因是语音的情绪过于平淡、输出速度可能过慢
 
 ---
 
@@ -132,7 +133,7 @@ curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d
 8. **model**默认为qwen2.5:7b 也可以设置为qwen2.5:14b 也可设置为ollama可以调用的其他模型
 9. **voice**默认为false，设置为true开启翻译
 10. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
-11. **venv**填入虚拟环境的python路径，如：venv="/home/xxx/venvs/gpt-sovits/bin/python"
-12. **voice_api**填入GPT-SoVITS的api.py的路径，如：voice_api="/home/xxx/my_software/GPT-SoVITS/api.py"
+11. **venv**填入虚拟环境的路径，如：venv="/home/xxx/venvs/gpt-sovits"
+12. **gpt_sovits_path**填入GPT-SoVITS的路径，如：voice_api="/home/xxx/my_software/GPT-SoVITS"
 
 ---

@@ -84,7 +84,7 @@ model=qwen2.5:7b
 voice=false
 translate_model=translategemma:4b
 venv="your/path"
-voice_api="your/path"
+gpt_sovits_path="your/path"
 EOF
 
 # 5. 配置～/.bashrc
