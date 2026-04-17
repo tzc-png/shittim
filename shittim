@@ -34,6 +34,9 @@ case "$1" in
     echo -e "  \033[1;32mfind <file>\033[0m   - 递归搜索指定文件"
     echo -e "  \033[1;32mfindline <str>\033[0m- 在代码库中检索特定内容"
     echo -e "  \033[1;32mplana <str>\033[0m   - 和plana聊天"
+    echo -e "  \033[1;32mstartup\033[0m       - 提前申请plana的资源"
+    echo -e "  \033[1;32mfree\033[0m          - 释放plana的资源"
+
     ;;
 "rain")
     if [ "$next_character" = "plana" ]; then
@@ -165,6 +168,58 @@ case "$1" in
     msg "Ollama 模型已经关闭" "" "false"
 
     msg "资源已完全释放。老师，辛苦了，请好好的休息吧。" "free_rest.wav" "false"
+    exit 0
+    ;;
+
+"startup")
+    msg "正在运行相应脚本并申请显存" "" "false"
+
+    # 1. 预热 Ollama 模型 (后台静默加载)
+    if pgrep -x "ollama" >/dev/null; then
+        msg "正在将模型 ${model} 加载至显存..." "" "false"
+        # 使用 keep_alive=-1 让模型永久驻留，除非手动 free
+        curl -s http://127.0.0.1:11434/api/generate -d "{\"model\": \"${model}\", \"keep_alive\": -1}" >/dev/null &
+    else
+        msg "发现 Ollama 未运行，正在尝试唤醒后台服务..." "" "false"
+        # 后台启动 ollama serve 并将日志重定向
+        nohup ollama serve >/tmp/ollama_serve.log 2>&1 &
+        sleep 2 # 给它一点点启动时间
+    fi
+
+    # 2. 启动 GPT-SoVITS 语音引擎
+    if ! pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
+
+        cd ${gpt_sovits_path}
+        ${venv}/bin/python ${gpt_sovits_path}/api.py -dr "${refer_wav}" -dt "${refer_txt}" -dl "${language}" >"$log_path" 2>&1 &
+        cd -
+
+        # 等待服务就绪
+        msg "正在启动GPT-SoVits，请稍候……" "" "false"
+
+        until curl -s http://127.0.0.1:9880 >/dev/null; do
+            sleep 1
+        done
+
+        JSON_PAYLOAD=$(
+            python3 - <<EOF
+import json
+
+print(json.dumps({
+    "gpt_model_path": "$model_ckpt",
+    "sovits_model_path": "$model_pth"
+}, ensure_ascii=False))
+EOF
+        )
+        curl -s -o /dev/null -X POST "http://127.0.0.1:9880/set_model" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD"
+
+        sleep 2
+    fi
+
+    next_character=plana
+    msg "核心协议已在后台唤醒。老师，想我的时候随时可以叫我。" "startup_finish.wav" "false"
+
     exit 0
     ;;
 

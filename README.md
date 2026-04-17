@@ -69,6 +69,7 @@ source ~/.bashrc
 * `rain`: 关于下雨天的特别备注
 * 老师也可以在终端直接输入 `shittim` ：输出一些预置的文本
 * `shittim plana <str>`: 普拉娜会与您互动。
+* `startup`: 提前准备普拉娜的对话（申请显存、运行脚本）
 * `free`: 释放 shittim plana <str> 的资源
 
 ---
