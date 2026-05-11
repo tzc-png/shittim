@@ -71,6 +71,7 @@ source ~/.bashrc
 * `shittim plana <str>`: 普拉娜会与您互动。
 * `startup`: 提前准备普拉娜的对话（申请显存、运行脚本）
 * `free`: 释放 shittim plana <str> 的资源
+* `resetproxy`: 关闭代理
 
 ---
 
@@ -117,7 +118,7 @@ curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d
 
 设置的内容存在4个地方确认：config,README.md,setup,shittim_lib
 老师可以通过编辑config进行设置
-1. **silent** 默认设置为false，设置为 true 可全局静音语音反馈
+1. **silent** 默认设置为false，设置为 true 可全局静音语音反馈，也可以设置为system根据当前是否为power-saver自动判断
 2. **is_exit** 默认设置为false，若设置为 true 将使脚本停止所有响应
 3. **characteristic**默认设置为standard,此设置用来选择prompt,有shy,standard,sweet三个选项
 4. **next_character** 决定下一次触发时出现的角色（plana 或 arona），不必设置，因为除了plana指令以外两小只都会交替出现

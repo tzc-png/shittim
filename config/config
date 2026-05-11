@@ -1,4 +1,4 @@
-silent=false
+silent=system
 is_exit=false
 characteristic=standard
 next_character="plana"

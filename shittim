@@ -36,6 +36,7 @@ case "$1" in
     echo -e "  \033[1;32mplana <str>\033[0m   - 和plana聊天"
     echo -e "  \033[1;32mstartup\033[0m       - 提前申请plana的资源"
     echo -e "  \033[1;32mfree\033[0m          - 释放plana的资源"
+    echo -e "  \033[1;32mresetproxy\033[0m    - 关闭代理"
 
     ;;
 "rain")
@@ -44,6 +45,11 @@ case "$1" in
     else
         msg "嗯……会下雨吗？" "rain.wav" "false"
     fi
+
+    ;;
+"resetproxy")
+    msg "嗯……正在关闭代理" "" "false"
+    unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
 
     ;;
 "time")

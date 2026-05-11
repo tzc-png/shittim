@@ -45,6 +45,18 @@ if [ "$is_exit" = "true" ]; then
     exit 0
 fi
 
+# system
+CURRENT_PROFILE=$(powerprofilesctl get)
+if [ "$CURRENT_PROFILE" == "power-saver" ]; then
+    if [ "$silent" == "system" ]; then
+        silent=true;
+    fi
+else
+    if [ "$silent" == "system" ]; then
+        silent=false;
+    fi
+fi
+
 # ==================== 3. 核心函数 ====================
 msg() {
     local text="$1"
