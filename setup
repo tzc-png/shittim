@@ -92,12 +92,15 @@ characteristic=standard
 next_character="plana"
 cmd=secure
 cmd_ignore=true
-memory=recent
+memory=10
 model=qwen2.5:7b
 voice=false
 translate_model=translategemma:4b
 venv="your/path"
 gpt_sovits_path="your/path"
+API_KEY=""
+BASE_URL=""
+MODEL_NAME=""
 EOF
 
 # 5. 配置～/.bashrc

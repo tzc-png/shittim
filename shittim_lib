@@ -22,12 +22,15 @@ characteristic=shy
 is_exit=false
 cmd=secure
 cmd_ignore=true
-memory=recent
+memory=10
 model=qwen2.5:7b
 voice=false
 translate_model=translategemma:4b
 venv="your/path"
 gpt_sovits_path="your/path"
+API_KEY=""
+BASE_URL=""
+MODEL_NAME=""
 
 voice_tmp="${SHITTIM_ROOT}/voice/gpt-sovits/plana/tmp.wav"
 model_ckpt="${SHITTIM_ROOT}/voice/gpt-sovits/models/Plana-e15.ckpt"

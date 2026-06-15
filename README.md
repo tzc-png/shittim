@@ -124,11 +124,12 @@ curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d
 4. **next_character** 决定下一次触发时出现的角色（plana 或 arona），不必设置，因为除了plana指令以外两小只都会交替出现
 5. **cmd**默认设置为secure（强烈建议）,这样每次执行指令之前都会要求确认。若设置为free,则执行指令无须确认。
 6. **cmd_ignore**默认设置为true（建议），即禁用指令执行功能。若想要使用指令执行功能，写入false
-7. **memory**默认为recent,也可以设置为recall（plana会回忆与你更加久远的对话）
+7. **memory**设置“回忆”的对话数
 8. **model**默认为qwen2.5:7b 也可以设置为qwen2.5:14b 也可设置为ollama可以调用的其他模型
 9. **voice**默认为false，设置为true开启翻译
 10. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
 11. **venv**填入虚拟环境的路径，如：venv="/home/xxx/venvs/gpt-sovits"
 12. **gpt_sovits_path**填入GPT-SoVITS的路径，如：voice_api="/home/xxx/my_software/GPT-SoVITS"
+13. **API_KEY** **BASE_URL** **MODEL_NAME** 为api配置，若不使用可留空
 
 ---

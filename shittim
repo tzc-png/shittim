@@ -18,6 +18,9 @@ VOICE_BASE="${SCRIPT_DIR}/voice/shittim"
 HOUR=$(date +%H)
 TIME_STR=$(date +%H:%M)
 
+# SYSTEM_PROMPT 从 prompt_lib 导入
+source "${SCRIPT_DIR}/prompt_lib"
+
 # --- 逻辑处理 ---
 case "$1" in
 "help")
@@ -232,10 +235,12 @@ EOF
 "plana")
 
     # 检测ollama是否存在
-    if ! command -v ollama &>/dev/null; then
-        echo -e "\033[1;33m[Warning]\033[0m 未检测到 Ollama，AI 对话功能将无法使用。"
-        echo "请执行: curl -fsSL https://ollama.com/install.sh | sh"
-        exit 0
+    if ! can_use_api; then
+        if ! command -v ollama &>/dev/null; then
+            echo -e "\033[1;33m[Warning]\033[0m 未检测到 Ollama，且未配置云端 API，AI 对话功能将无法使用。"
+            echo "请配置 API 或执行: curl -fsSL https://ollama.com/install.sh | sh"
+            exit 0
+        fi
     fi
 
     next_character="plana"
@@ -253,49 +258,51 @@ EOF
     touch "$HISTORY_FILE"
 
     # 提取历史
-    if [ "$memory" = "recent" ]; then
-        RECENT_HISTORY=$(get_history "recent" 10)
-    elif [ "$memory" = "recall" ]; then
-        RECENT_HISTORY=$(get_history "recall" 4 6)
+    if [[ "$memory" =~ ^[0-9]+$ ]]; then
+        RECENT_HISTORY=$(get_history "recent" "$memory")
     else
         echo "invalid config:memory!"
         exit 1
     fi
     RECENT_HISTORY=$(context_auto_reset "$RECENT_HISTORY")
 
-    # SYSTEM_PROMPT 从 prompt_lib 导入
-    source "${SCRIPT_DIR}/prompt_lib"
-
-    if [ "$model" = "qwen2.5:14b" ]; then
-        JSON_DATA=$(jq -n \
-            --arg m "qwen2.5:14b" \
-            --arg s "$SYSTEM_PROMPT" \
-            --arg h "history: $RECENT_HISTORY" \
-            --arg u "User: $USER_INPUT" \
-            '{"model": $m,
-              "system": $s,
-              "prompt": ($h + "\n" + $u),
-              "options": {
-                "num_thread": 8,
-                "num_ctx": 4096,
-                "temperature": 0.85,
-                "repeat_penalty": 1.3
-              }, 
-              "stream": false}')
-    elif [ "$model" = "qwen2.5:7b" ]; then
-        JSON_DATA=$(jq -n \
-            --arg m "qwen2.5:7b" \
-            --arg s "$SYSTEM_PROMPT" \
-            --arg h "history: $RECENT_HISTORY" \
-            --arg u "User: $USER_INPUT" \
-            '{"model": $m, "system": $s, "prompt": ($h + "\n" + $u), "stream": false}')
+    if can_use_api; then
+        echo "use api"
+        JSON_DATA=$(jq -n --arg m "${MODEL_NAME}" --arg s "$SYSTEM_PROMPT" --arg h "history: $RECENT_HISTORY" --arg u "User: $USER_INPUT" '{"model": $m, "messages": [{"role": "system", "content": $s}, {"role": "user", "content": ($h + "\n" + $u)}], "temperature": 0.85, "stream": false}')
+        RESPONSE=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" -H "Authorization: Bearer ${API_KEY}" -H "Content-Type: application/json" -d "$JSON_DATA" | jq -r '.choices[0].message.content')
+        echo "$RESPONSE"
     else
-        echo "invalid config:model"
-        exit 1
+        echo "use ollama"
+        if [ "$model" = "qwen2.5:14b" ]; then
+            JSON_DATA=$(jq -n \
+                --arg m "qwen2.5:14b" \
+                --arg s "$SYSTEM_PROMPT" \
+                --arg h "history: $RECENT_HISTORY" \
+                --arg u "User: $USER_INPUT" \
+                '{"model": $m,
+                 "system": $s,
+                  "prompt": ($h + "\n" + $u),
+                  "options": {
+                    "num_thread": 8,
+                    "num_ctx": 4096,
+                    "temperature": 0.85,
+                    "repeat_penalty": 1.3
+                  }, 
+                  "stream": false}')
+        elif [ "$model" = "qwen2.5:7b" ]; then
+            JSON_DATA=$(jq -n \
+                --arg m "qwen2.5:7b" \
+                --arg s "$SYSTEM_PROMPT" \
+                --arg h "history: $RECENT_HISTORY" \
+                --arg u "User: $USER_INPUT" \
+               '{"model": $m, "system": $s, "prompt": ($h + "\n" + $u), "stream": false}')
+        else
+            echo "invalid config:model"
+            exit 1
+        fi
+        # 增加一个简单的加载提示
+        RESPONSE=$(curl -s -X POST http://localhost:11434/api/generate -d "$JSON_DATA" | jq -r '.response')
     fi
-
-    # 增加一个简单的加载提示
-    RESPONSE=$(curl -s -X POST http://localhost:11434/api/generate -d "$JSON_DATA" | jq -r '.response')
 
     # 存储逻辑：只有非指令回复才记录 ---
     if ! echo "$RESPONSE" | grep -q ">>>EXEC:"; then
@@ -385,8 +392,15 @@ EOF
 
             RESPONSE_CLEAN=$(echo "$RESPONSE_CLEAN" | sed -E 's/([-]|—|——).*//g' | xargs)
 
-            TRANSLATE_RESULT=$(ollama run ${translate_model} \
-                "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}")
+            if can_use_api; then
+                echo "language use api"
+                JSON_TRANSLATE=$(jq -n --arg m "${MODEL_NAME}" --arg p "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}" '{"model": $m, "messages": [{"role": "user", "content": $p}], "temperature": 0.3, "stream": false}')
+                TRANSLATE_RESULT=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" -H "Authorization: Bearer ${API_KEY}" -H "Content-Type: application/json" -d "$JSON_TRANSLATE" | jq -r '.choices[0].message.content')
+                echo "$TRANSLATE_RESULT"
+            else
+                TRANSLATE_RESULT=$(ollama run ${translate_model} \
+                    "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}")
+            fi
 
             TRANSLATE_RESULT=$(echo "${TRANSLATE_RESULT}" | tr -d '\n\r\t ')
 
