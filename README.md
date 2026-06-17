@@ -128,8 +128,6 @@ curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d
 8. **model**默认为qwen2.5:7b 也可以设置为qwen2.5:14b 也可设置为ollama可以调用的其他模型
 9. **voice**默认为false，设置为true开启翻译
 10. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
-11. **venv**填入虚拟环境的路径，如：venv="/home/xxx/venvs/gpt-sovits"
-12. **gpt_sovits_path**填入GPT-SoVITS的路径，如：voice_api="/home/xxx/my_software/GPT-SoVITS"
-13. **API_KEY** **BASE_URL** **MODEL_NAME** 为api配置，若不使用可留空
+11. **API_KEY** **BASE_URL** **MODEL_NAME** 为api配置，若不使用可留空
 
 ---
