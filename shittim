@@ -9,27 +9,22 @@ SCRIPT_DIR=$(
     pwd
 )
 
-# 使用相对脚本位置的路径进行加载 [cite: 1, 28]
 source "${SCRIPT_DIR}/shittim_lib"
 VOICE_BASE="${SCRIPT_DIR}/voice/shittim"
 
 # ==================== 逻辑处理 ====================
-# --- 基础数据获取 ---
 HOUR=$(date +%H)
 TIME_STR=$(date +%H:%M)
 
-# SYSTEM_PROMPT 从 prompt_lib 导入
+CURRENT_TIME=$(date "+%Y-%m-%d %H:%M:%S")
 source "${SCRIPT_DIR}/prompt_lib"
 
-# --- 逻辑处理 ---
+api_log_path="${SHITTIM_ROOT}/history/api.log"
+ollama_log_path="${SHITTIM_ROOT}/history/ollama.log"
+
 case "$1" in
 "help")
-    if [ "$next_character" = "plana" ]; then
-        msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false"
-    else
-        msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false"
-    fi
-
+    msg "老师，这些是我目前能为您提供的协助列表：" "help.wav" "false"
     echo -e "  \033[1;32mrain\033[0m          - 关于下雨天的特别备忘"
     echo -e "  \033[1;32mtime\033[0m          - 报告当前时间并给予时段建议"
     echo -e "  \033[1;32mload\033[0m          - 检查系统负载状态"
@@ -40,50 +35,30 @@ case "$1" in
     echo -e "  \033[1;32mstartup\033[0m       - 提前申请plana的资源"
     echo -e "  \033[1;32mfree\033[0m          - 释放plana的资源"
     echo -e "  \033[1;32mresetproxy\033[0m    - 关闭代理"
-
     ;;
+
 "rain")
     if [ "$next_character" = "plana" ]; then
         msg "下雨的话就用这个……" "rain.wav" "false"
     else
         msg "嗯……会下雨吗？" "rain.wav" "false"
     fi
-
     ;;
+
 "resetproxy")
     msg "嗯……正在关闭代理" "" "false"
     unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
-
     ;;
+
 "time")
     if [ $HOUR -ge 5 ] && [ $HOUR -lt 8 ]; then
-        if [ "$next_character" = "plana" ]; then
-            msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
-        else
-            msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
-        fi
-
+        msg "${TIME_STR} 老师，早起不仅能处理更多工作，对身体也有好处" "morning.wav" "false"
     elif [ $HOUR -ge 8 ] && [ $HOUR -lt 12 ]; then
-        if [ "$next_character" = "plana" ]; then
-            msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
-        else
-            msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
-        fi
-
+        msg "${TIME_STR} 这个时间段的效率最高，请保持专注，老师" "working.wav" "false"
     elif [ $HOUR -ge 12 ] && [ $HOUR -lt 14 ]; then
-        if [ "$next_character" = "plana" ]; then
-            msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
-        else
-            msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
-        fi
-
+        msg "${TIME_STR} 哪怕只是小憩一会儿，也能让下午的大脑更清醒" "noon.wav" "false"
     elif [ $HOUR -ge 14 ] && [ $HOUR -lt 21 ]; then
-        if [ "$next_character" = "plana" ]; then
-            msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
-        else
-            msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
-        fi
-
+        msg "${TIME_STR} 工作进入平稳期了，需要为您准备咖啡吗？" "afternoon.wav" "false"
     else
         if [ "$next_character" = "plana" ]; then
             if [ $((RANDOM % 2)) -eq 0 ]; then
@@ -94,151 +69,85 @@ case "$1" in
         else
             msg "${TIME_STR} 这么晚了,老师该休息了" "night.wav" "false"
         fi
-
     fi
     ;;
+
 "load")
     CPU_LOAD=$(cat /proc/loadavg | awk '{print $1}')
     MEM_USAGE=$(free | grep Mem | awk '{print $3/$2 * 100.0}' | cut -d. -f1)
     msg "CPU负载: ${CPU_LOAD} | 内存占用: ${MEM_USAGE}%" "load.wav" "false"
     if [ $(echo "$CPU_LOAD > 4.0" | bc 2>/dev/null || echo 0) -ne 0 ] || [ $MEM_USAGE -gt 80 ]; then
-        # 负载警告维持红色
-        if [ "$next_character" = "plana" ]; then
-            msg "当前负载过高" "alert.wav" "true"
-        else
-            msg "当前负载过高" "alert.wav" "true"
-        fi
-
+        msg "当前负载过高" "alert.wav" "true"
     fi
     ;;
+
 "ls")
     if [ "$next_character" = "plana" ]; then
         msg "嗯……这里是这样的构造呢" "ls_observe.wav" "false"
     else
         msg "这里都有什么呢？" "ls_observe.wav" "false"
     fi
-
     shift
     /bin/ls --color=auto "$@"
     ;;
+
 "find")
     if [ -z "$2" ]; then
-        if [ "$next_character" = "plana" ]; then
-            msg "老师，请指定要查找的文件名" "where.wav" "false"
-        else
-            msg "老师，请指定要查找的文件名" "where.wav" "false"
-        fi
-
+        msg "老师，请指定要查找的文件名" "where.wav" "false"
     else
-        if [ "$next_character" = "plana" ]; then
-            msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
-        else
-            msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
-        fi
-
+        msg "嗯……正在扫描目录结构，寻找 $2 ……" "scanning.wav" "false"
         find . -name "$2"
     fi
     ;;
+
 "findline")
     if [ -z "$2" ]; then
-        if [ "$next_character" = "plana" ]; then
-            msg "老师，请提供一个搜索字符串" "where.wav" "false"
-        else
-            msg "老师，请提供一个搜索字符串" "where.wav" "false"
-        fi
-
+        msg "老师，请提供一个搜索字符串" "where.wav" "false"
     else
-        if [ "$next_character" = "plana" ]; then
-            msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
-        else
-            msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
-        fi
-
+        msg "正在检索包含 \"$2\" 的所有文件……" "scanning.wav" "false"
         grep -rn "$2" . --exclude-dir=.git
     fi
     ;;
 
 "free")
     msg "正在尝试释放所有占用的资源……" "" "false"
-
-    # 1. 停止 GPT-SoVITS 语音服务
-    if pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
-        pkill -f "${gpt_sovits_path}/api.py"
+    if pgrep -f "plana_tts_server.py" >/dev/null; then
+        pkill -f "plana_tts_server.py"
+        rm -f "$PLANA_SOCK"
     fi
-    msg "语音合成引擎已经关闭" "" "false"
-
-    # 2. 卸载 Ollama 加载的模型 (释放显存的核心)
-    # Ollama 默认会驻留模型，使用 /api/generate 传空模型名可强制释放
+    msg "语音引擎已经关闭" "" "false"
     if pgrep -x "ollama" >/dev/null; then
-        # 这种方法最快，无需杀掉整个 ollama 服务，仅释放显存
         ollama stop "${model}" >/dev/null 2>&1
         ollama stop "${translate_model}" >/dev/null 2>&1
     fi
     msg "Ollama 模型已经关闭" "" "false"
-
     msg "资源已完全释放。老师，辛苦了，请好好的休息吧。" "free_rest.wav" "false"
     exit 0
     ;;
 
 "startup")
     msg "正在运行相应脚本并申请显存" "" "false"
-
-    # 1. 预热 Ollama 模型 (后台静默加载)
     if pgrep -x "ollama" >/dev/null; then
         msg "正在将模型 ${model} 加载至显存..." "" "false"
-        # 使用 keep_alive=-1 让模型永久驻留，除非手动 free
-        curl -s http://127.0.0.1:11434/api/generate -d "{\"model\": \"${model}\", \"keep_alive\": -1}" >/dev/null &
+        curl -s http://127.0.0.1:11434/api/generate \
+            -d "{\"model\": \"${model}\", \"keep_alive\": -1}" >/dev/null &
     else
         msg "发现 Ollama 未运行，正在尝试唤醒后台服务..." "" "false"
-        # 后台启动 ollama serve 并将日志重定向
         nohup ollama serve >/tmp/ollama_serve.log 2>&1 &
-        sleep 2 # 给它一点点启动时间
-    fi
-
-    # 2. 启动 GPT-SoVITS 语音引擎
-    if ! pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
-
-        cd ${gpt_sovits_path}
-        ${venv}/bin/python ${gpt_sovits_path}/api.py -dr "${refer_wav}" -dt "${refer_txt}" -dl "${language}" >"$log_path" 2>&1 &
-        cd -
-
-        # 等待服务就绪
-        msg "正在启动GPT-SoVits，请稍候……" "" "false"
-
-        until curl -s http://127.0.0.1:9880 >/dev/null; do
-            sleep 1
-        done
-
-        JSON_PAYLOAD=$(
-            python3 - <<EOF
-import json
-
-print(json.dumps({
-    "gpt_model_path": "$model_ckpt",
-    "sovits_model_path": "$model_pth"
-}, ensure_ascii=False))
-EOF
-        )
-        curl -s -o /dev/null -X POST "http://127.0.0.1:9880/set_model" \
-            -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD"
-
         sleep 2
     fi
-
+    if [ "$voice" = "true" ]; then
+        _ensure_tts_server
+    fi
     next_character=plana
     msg "核心协议已在后台唤醒。老师，想我的时候随时可以叫我。" "startup_finish.wav" "false"
-
     exit 0
     ;;
 
 "plana")
-
-    # 检测ollama是否存在
     if ! can_use_api; then
         if ! command -v ollama &>/dev/null; then
             echo -e "\033[1;33m[Warning]\033[0m 未检测到 Ollama，且未配置云端 API，AI 对话功能将无法使用。"
-            echo "请配置 API 或执行: curl -fsSL https://ollama.com/install.sh | sh"
             exit 0
         fi
     fi
@@ -246,232 +155,163 @@ EOF
     next_character="plana"
     USER_INPUT="${*:2}"
 
-    # 记忆文件路径（放在/hostory）
-    HISTORY_FILE="${SCRIPT_DIR}/history/plana_history.log"
-    HISTORY_PATH="${SCRIPT_DIR}/history/"
+    # ── 构造 messages 数组 ────────────────────────────────────────────────────
+    # 读取历史
+    HISTORY_MESSAGES=$(get_history_messages "$memory")
 
-    # 获取当前时间
-    CURRENT_TIME=$(date "+%Y-%m-%d %H:%M:%S")
+    # 检查是否需要插入场景重置提示
+    RESET_HINT=$(context_auto_reset_check)
 
-    # 更新历史文件时间戳
-    mkdir -p "$HISTORY_PATH"
-    touch "$HISTORY_FILE"
-
-    # 提取历史
-    if [[ "$memory" =~ ^[0-9]+$ ]]; then
-        RECENT_HISTORY=$(get_history "recent" "$memory")
+    # 如果历史为空，插入初见引导
+    # 组装完整 messages：system + history + 本次 user
+    # 重置提示和初见提示作为独立 system 消息插入，不污染主 system prompt
+    if [ "$HISTORY_MESSAGES" = "[]" ]; then
+        EXTRA_HINT="这是老师和你的第一次对话。你刚被唤醒，请表现得文静、礼貌且略带羞涩。"
     else
-        echo "invalid config:memory!"
-        exit 1
+        EXTRA_HINT="$RESET_HINT"
     fi
-    RECENT_HISTORY=$(context_auto_reset "$RECENT_HISTORY")
 
-    if can_use_api; then
-        echo "use api"
-        JSON_DATA=$(jq -n --arg m "${MODEL_NAME}" --arg s "$SYSTEM_PROMPT" --arg h "history: $RECENT_HISTORY" --arg u "User: $USER_INPUT" '{"model": $m, "messages": [{"role": "system", "content": $s}, {"role": "user", "content": ($h + "\n" + $u)}], "temperature": 0.85, "stream": false}')
-        RESPONSE=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" -H "Authorization: Bearer ${API_KEY}" -H "Content-Type: application/json" -d "$JSON_DATA" | jq -r '.choices[0].message.content')
-        echo "$RESPONSE"
+    MESSAGES=$(jq -n \
+        --arg sys "$SYSTEM_PROMPT" \
+        --arg usr "$USER_INPUT" \
+        --arg hint "$EXTRA_HINT" \
+        --argjson hist "$HISTORY_MESSAGES" \
+        'if $hint != "" then
+            [{"role":"system","content":$sys}] + $hist +
+            [{"role":"system","content":$hint},
+             {"role":"user","content":$usr}]
+        else
+            [{"role":"system","content":$sys}] + $hist +
+            [{"role":"user","content":$usr}]
+        end')
+
+    # ── LLM 推理 ─────────────────────────────────────────────────────────────
+    if can_use_api && [ "$ENABLE_CHAT_API" = "true" ]; then
+        JSON_DATA=$(jq -n \
+            --arg m "$MODEL_NAME" \
+            --argjson msgs "$MESSAGES" \
+            '{"model":$m,"messages":$msgs,"temperature":0.85,"thinking_budget":0,"stream":false}')
+
+        API_RESULT=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" \
+            -H "Authorization: Bearer ${API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_DATA")
+
+        echo "api(chat) send:" >> "$api_log_path"  2>&1
+        echo $JSON_DATA >> "$api_log_path"  2>&1
+        echo "api(chat) result:" >> "$api_log_path"  2>&1
+        echo $API_RESULT >> "$api_log_path"  2>&1
+
+        # 检查是否有错误（余额不足、认证失败等）
+        API_ERROR=$(echo "$API_RESULT" | jq -r '.error.message // empty')
+        if [ -n "$API_ERROR" ]; then
+            echo -e "${C_ALERT}[API Error] ${API_ERROR}${NC}" >&2
+            msg "老师……好像出了点问题，请检查一下API的状态。(或者在config里暂时关闭api)" "" "true"
+            exit 1
+        fi
+
+        RESPONSE=$(echo "$API_RESULT" | jq -r '.choices[0].message.content')
+
     else
-        echo "use ollama"
+        # Ollama：将 messages 转为 system+prompt 格式
+        HISTORY_TEXT=$(echo "$HISTORY_MESSAGES" | jq -r \
+            '.[] | if .role=="user" then "User: "+.content else "AI: "+.content end' \
+            | tr '\n' '\n')
         if [ "$model" = "qwen2.5:14b" ]; then
             JSON_DATA=$(jq -n \
                 --arg m "qwen2.5:14b" \
-                --arg s "$SYSTEM_PROMPT" \
-                --arg h "history: $RECENT_HISTORY" \
-                --arg u "User: $USER_INPUT" \
-                '{"model": $m,
-                 "system": $s,
-                  "prompt": ($h + "\n" + $u),
-                  "options": {
-                    "num_thread": 8,
-                    "num_ctx": 4096,
-                    "temperature": 0.85,
-                    "repeat_penalty": 1.3
-                  }, 
-                  "stream": false}')
-        elif [ "$model" = "qwen2.5:7b" ]; then
+                --arg s "$SYSTEM_CONTENT" \
+                --arg p "${HISTORY_TEXT}\nUser: ${USER_INPUT}" \
+                '{"model":$m,"system":$s,"prompt":$p,
+                  "options":{"num_thread":8,"num_ctx":4096,
+                             "temperature":0.85,"repeat_penalty":1.3},
+                  "stream":false}')
+        else
             JSON_DATA=$(jq -n \
                 --arg m "qwen2.5:7b" \
-                --arg s "$SYSTEM_PROMPT" \
-                --arg h "history: $RECENT_HISTORY" \
-                --arg u "User: $USER_INPUT" \
-               '{"model": $m, "system": $s, "prompt": ($h + "\n" + $u), "stream": false}')
-        else
-            echo "invalid config:model"
-            exit 1
+                --arg s "$SYSTEM_CONTENT" \
+                --arg p "${HISTORY_TEXT}\nUser: ${USER_INPUT}" \
+                '{"model":$m,"system":$s,"prompt":$p,"stream":false}')
         fi
-        # 增加一个简单的加载提示
-        RESPONSE=$(curl -s -X POST http://localhost:11434/api/generate -d "$JSON_DATA" | jq -r '.response')
+
+        RAW_RESPONESE=$(curl -s -X POST http://localhost:11434/api/generate \
+            -d "$JSON_DATA")
+
+        echo "ollama(chat) send:" >> "$ollama_log_path"  2>&1
+        echo $JSON_DATA >> "$ollama_log_path"  2>&1
+        echo "ollama(chat) result:" >> "$ollama_log_path"  2>&1
+        echo $RAW_RESPONESE >> "$ollama_log_path"  2>&1
+
+        RESPONSE=$(echo "$RAW_RESPONESE" | jq -r '.response')
     fi
 
-    # 存储逻辑：只有非指令回复才记录 ---
+    # ── 记录历史 ──────────────────────────────────────────────────────────────
     if ! echo "$RESPONSE" | grep -q ">>>EXEC:"; then
-        # 只有 AI 正常说话时，才记录这一轮对话
-        RESPONSE_SAVE=$(echo "${RESPONSE}" | tr -d '\n\r\t ')
-        echo "User: $USER_INPUT (time:$CURRENT_TIME)" >>"$HISTORY_FILE"
-        echo "AI: $RESPONSE_SAVE" >>"$HISTORY_FILE"
+        append_history "user" "$USER_INPUT"
+        append_history "assistant" "$RESPONSE"
     fi
 
-    # --- 指令处理逻辑 ---
+    # ── 指令处理（保持原逻辑）────────────────────────────────────────────────
     if echo "$RESPONSE" | grep -q ">>>EXEC:"; then
         echo "该功能暂时关闭"
         exit 1
-
-        if [ "$cmd_ignore" = "true" ]; then
-            next_character="plana"
-            msg "普拉娜……拒绝执行此指令。理由：config文件中启用了cmd_ignore" "" "true"
-            exit 1
-        fi
-
-        FULL_CMD=$(echo "$RESPONSE" | sed -n 's/.*>>>EXEC:[[:space:]]*\(.*\)[[:space:]]*<<<.*/\1/p' | sed 's/[[:space:]]*$//')
-
-        if [ -z "$FULL_CMD" ]; then
-            msg "老师，指令解析异常，请重新下达。" "" "false"
-            exit 1
-        fi
-
-        # --- 【黑名单拦截】 ---
-        # 无论 rm 出现在哪里（开头、中间、管道后、xargs参数里），只要出现就拦截
-        # 排除掉包含 rm 的文件名（如 arm_file），只匹配独立的单词 rm
-        if echo "$FULL_CMD" | grep -qwE "(rm|mv|sudo|dd|mkfs|chmod|chown|>|>>|mkdir)"; then
-            next_character="plana"
-            msg "普拉娜……拒绝执行此指令(${FULL_CMD})。理由：指令中包含高危操作符，为了老师的安全，该操作已被拦截。" "" "true"
-            exit 1
-        fi
-
-        ALLOWED="ls cat find grep wc du date pwd tree awk xargs echo"
-        BASE_CMD=$(echo "$FULL_CMD" | awk '{print $1}')
-
-        # --- 优化后的白名单校验：支持管道符多级检查 ---
-        # 将指令按管道符分割，检查每一个子命令的首个单词
-        SAVE_IFS=$IFS
-        IFS='|' read -ra ADDR <<<"$FULL_CMD"
-        IFS=$SAVE_IFS # 立即恢复，防止影响后续逻辑
-        for part in "${ADDR[@]}"; do
-            # 去除前导空格并取第一个词
-            SUB_BASE=$(echo "$part" | xargs | awk '{print $1}')
-            ALLOWED_LIST="ls cat find grep wc du date pwd tree awk xargs echo"
-
-            if [[ ! " $ALLOWED_LIST " =~ " $SUB_BASE " ]]; then
-                next_character="plana"
-                msg "拦截到未授权子指令: '$SUB_BASE' full: '$FULL_CMD'" "" "true"
-                exit 1
-            fi
-        done
-
-        next_character="plana"
-        msg "正在执行指令: ${C_CODE_DISPLAY}${FULL_CMD}${NC}" "" "false"
-
-        if [ "$cmd" = "secure" ]; then
-            next_character="plana"
-            msg "老师，真的要执行这条指令吗？(y/n):" "" "false"
-
-            read -r USER_CONFIRM
-            if [ "$USER_CONFIRM" != "y" ] && [ "$USER_CONFIRM" != "Y" ]; then
-                next_character="plana"
-                msg "明白了。已经取消了该指令的操作。" "" "false"
-                exit 0
-            fi
-        elif [ "$cmd" = "free" ]; then
-            # just execute
-            msg "执行中……" "" "false"
-        else
-            echo "invalid config:cmd!"
-            exit 1
-        fi
-
-        echo "------------------------------------------"
-        bash -c "$FULL_CMD"
-        echo "------------------------------------------"
     else
-        # 回复语音
+        # ── 语音合成 ──────────────────────────────────────────────────────────
         if [ "$voice" = "true" ]; then
-            rm -f ${voice_tmp}
+            rm -f "${voice_tmp}"
 
             RESPONSE_CLEAN=$(echo "$RESPONSE" | sed -E 's/\([^()]*\)|（[^（）]*）//g')
-
             RESPONSE_CLEAN=$(echo "$RESPONSE_CLEAN" | sed -E 's/([-]|—|——).*//g' | xargs)
 
-            if can_use_api; then
-                echo "language use api"
-                JSON_TRANSLATE=$(jq -n --arg m "${MODEL_NAME}" --arg p "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}" '{"model": $m, "messages": [{"role": "user", "content": $p}], "temperature": 0.3, "stream": false}')
-                TRANSLATE_RESULT=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" -H "Authorization: Bearer ${API_KEY}" -H "Content-Type: application/json" -d "$JSON_TRANSLATE" | jq -r '.choices[0].message.content')
-                echo "$TRANSLATE_RESULT"
+            if can_use_api && [ "$ENABLE_TRANS_API" = "true" ]; then
+                JSON_TRANSLATE=$(jq -n \
+                    --arg m "$MODEL_NAME" \
+                    --arg p "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}" \
+                    '{"model":$m,"messages":[{"role":"user","content":$p}],
+                      "temperature":0.3,"thinking_budget":0,"stream":false}')
+                
+                TRANSLATE_RESULT_RAW=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" \
+                    -H "Authorization: Bearer ${API_KEY}" \
+                    -H "Content-Type: application/json" \
+                    -d "$JSON_TRANSLATE")
+
+                echo "api(translate) send:" >> "$api_log_path"  2>&1
+                echo $JSON_TRANSLATE >> "$api_log_path"  2>&1
+                echo "api(translate) result:" >> "$api_log_path"  2>&1
+                echo $TRANSLATE_RESULT_RAW >> "$api_log_path"  2>&1
+
+                TRANSLATE_ERROR=$(echo "$TRANSLATE_RESULT_RAW" | jq -r '.error.message // empty')
+                if [ -n "$TRANSLATE_ERROR" ]; then
+                    echo -e "${C_DEBUG}[Translate Error] ${TRANSLATE_ERROR}${NC}" >&2
+                    voice="false"   # 降级为纯文字
+                    exit 1
+                else
+                    TRANSLATE_RESULT=$(echo "$TRANSLATE_RESULT_RAW" | jq -r '.choices[0].message.content')
+                fi
+
             else
-                TRANSLATE_RESULT=$(ollama run ${translate_model} \
+                TRANSLATE_RESULT=$(ollama run "${translate_model}" \
                     "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}")
+
+                echo "ollama(translate) send:" >> "$ollama_log_path"  2>&1
+                echo "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}" >> "$ollama_log_path"  2>&1
+                echo "ollama(translate) result:" >> "$ollama_log_path"  2>&1
+                echo $TRANSLATE_RESULT >> "$ollama_log_path"  2>&1
             fi
 
             TRANSLATE_RESULT=$(echo "${TRANSLATE_RESULT}" | tr -d '\n\r\t ')
 
-            # 启动服务（仅一次）
-            if ! pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
-
-                cd ${gpt_sovits_path}
-                ${venv}/bin/python ${gpt_sovits_path}/api.py -dr "${refer_wav}" -dt "${refer_txt}" -dl "${language}" >"$log_path" 2>&1 &
-                cd -
-
-                # 等待服务就绪
-                msg "正在启动GPT-SoVits，请稍候……" "" "false"
-
-                until curl -s http://127.0.0.1:9880 >/dev/null; do
-                    sleep 1
-                done
-
-                JSON_PAYLOAD=$(
-                    python3 - <<EOF
-import json
-
-print(json.dumps({
-    "gpt_model_path": "$model_ckpt",
-    "sovits_model_path": "$model_pth"
-}, ensure_ascii=False))
-EOF
-                )
-                curl -s -o /dev/null -X POST "http://127.0.0.1:9880/set_model" \
-                    -H "Content-Type: application/json" \
-                    -d "$JSON_PAYLOAD"
-
-                sleep 2
-            fi
-
-            # TTS
-            if [[ "${voice_tmp}" != *.wav ]]; then
-                echo "[Error] voice_tmp 必须以 .wav 结尾: ${voice_tmp}"
-                exit 1
-            fi
-
-            # --- 推理部分 ---
-            JSON_PAYLOAD=$(python3 -c "import json; print(json.dumps({'text': '$TRANSLATE_RESULT', 'text_language': '$language'}, ensure_ascii=False))")
-
-            # 增加 --connect-timeout 防止死锁
-            # 增加 --retry 确保由于瞬时显存波动导致的失败能重试
-            curl -L -s -X POST "http://127.0.0.1:9880/" \
-                -H "Content-Type: application/json" \
-                -d "$JSON_PAYLOAD" \
-                --connect-timeout 10 \
-                --max-time 60 \
-                -o "${voice_tmp}"
-
-            # 检查 curl 的退出状态码
-            if [ $? -ne 0 ] || [ ! -s "${voice_tmp}" ]; then
-                echo -e "${C_DEBUG}[Error] GPT-SoVITS 推理失败或音频文件为空。${NC}"
-                echo -e "${C_DEBUG}[Tip] 请检查 $log_path 查看后端报错（可能是显存不足 OOM）。${NC}"
-                # 如果失败了，不要退出脚本，让普拉娜至少能把文字说出来
+            if ! onnx_tts "$TRANSLATE_RESULT" "${voice_tmp}"; then
+                echo -e "${C_DEBUG}[Error] 语音合成失败${NC}"
                 voice="false"
-                exit 1
             fi
 
             if [ "$voice" = "true" ] && [ -f "$voice_tmp" ]; then
-                # ... 原有的 paplay 逻辑 ...
                 pkill -f "paplay.*plana" >/dev/null 2>&1
-                {
-                    paplay --client-name="plana" "$voice_tmp" >/dev/null 2>&1
-                } &
+                { paplay --client-name="plana" "$voice_tmp" >/dev/null 2>&1; } &
             fi
         fi
 
-        # 回复文字
         next_character=plana
         msg "$RESPONSE" "" "false"
     fi
@@ -490,6 +330,5 @@ EOF
         2) msg "哇……工作量也太多了" "too_many.wav" "false" ;;
         esac
     fi
-
     ;;
 esac

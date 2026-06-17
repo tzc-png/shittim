@@ -22,7 +22,7 @@
 * **awk / sed:** 用于提取系统数据及角色状态持久化
 * **procps:** 提供 `free` 命令以监控内存占用情况
 * **jq:** 用于处理 AI 接口的 JSON 数据。
-* **Ollama:** 必须安装。请确保已通过 `ollama pull qwen2.5:7b` `ollama pull qwen2.5:14b`获取对话模型。
+* **Ollama:** 请确保已通过 `ollama pull qwen2.5:7b` 获取对话模型，若决定完全使用api,可以配置config中的ENABLE_CHAT_API以及ENABLE_TRANS_API都为true。
 
 ### 2. 音频支持
 * **pulseaudio-utils:** 必须安装，系统通过 `paplay` 指令驱动语音反馈
@@ -32,7 +32,6 @@
 sudo apt update && sudo apt install bc jq pulseaudio-utils procps coreutils
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull qwen2.5:7b
-ollama pull qwen2.5:14b
 ```
 
 ---
@@ -47,7 +46,8 @@ cd ~/shittim
 ```
 
 ### 2. 执行配置协议
-我们提供了一键配置脚本，会自动处理终端配色（PS1）、路径设置（PATH）以及开机唤醒逻辑：
+按照“依赖要求”进行工具安装
+在此基础上我们提供了一键配置脚本，会自动处理终端配色（PS1）、路径设置（PATH）以及开机唤醒逻辑：
 ```bash
 sh ./setup.sh
 ```
@@ -56,6 +56,31 @@ sh ./setup.sh
 执行以下命令或重新打开终端，即可完成什亭之匣的连接：
 ```bash
 source ~/.bashrc
+```
+
+### 4. 语音输出
+执行以下命令来下载必要组建配置虚拟环境：
+```bash
+conda create -n plana python=3.10
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
+pip install numpy soundfile librosa transformers einops omegaconf librosa phonemizer pytorch-lightning matplotlib pyopenjtalk
+```
+
+测试方式：
+terminal 1：
+```bash
+conda activate plana
+python plana_tts_server.py &
+```
+
+```bash
+echo '{"text":"テストです。","out":"/tmp/test.wav"}' | nc -U /tmp/plana_tts.sock
+aplay /tmp/test.wav
+```
+
+按需下载翻译模型（可以用api替代，若要替代，配置ENABLE_TRANS_API为true）
+```bash
+ollama pull translategemma:4b
 ```
 
 ---
@@ -75,36 +100,6 @@ source ~/.bashrc
 
 ---
 
-## 更多功能 (Extended Features)
-
-目前已经实现了plana指令自动合成语音的功能，为了调用它，你需要（以下进阶功能配置较难）：
-1. 在自己的linux系统上部署 GPT-SoVITS：https://github.com/RVC-Boss/GPT-SoVITS （可能要相应补充一些库）
-2. 下载额外的模型
-```bash
-ollama pull translategemma:4b
-ollama pull translategemma:12b
-```
-3. (config)设置voice=true
-4. (shittim_lib)venv设置为自己的虚拟环境，gpt_sovits_path设置为GPT-SoVITS的路径
-5. 尝试运行以下代码无误（需要按需更改路径）:
-```bash
-python api.py -dr "1.wav" -dt "先生の接続プロセスを确认。よろしくお願いします。" -dl "ja" > api.log 2>&1 &
-
-curl -X POST "http://127.0.0.1:9880/set_model"   -H "Content-Type: application/json"   -d '{
-    "gpt_model_path": "/home/tzc/my_software/shittim/voice/gpt-sovits/models/Plana-e15.ckpt",
-    "sovits_model_path": "/home/tzc/my_software/shittim/voice/gpt-sovits/models/Plana_e16_s208.pth"
-  }'
-
-curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d '{
-    "text": "どの仕事を始めますか、先生。",
-    "text_language": "ja"                                                                          
-  }' --output ./test/out.wav
-```
-* 完成以上配置之后，不排除仍然存在一些依赖问题，可能需要自己调整
-* 当然，即使老师完成了以上所有这些，最后综合效果也未必一定好：主要原因是语音的情绪过于平淡、输出速度可能过慢
-
----
-
 ## ⚠️ 注意事项 (Notes)
 
 1. **路径自适应:** 脚本会自动识别自身所在位置。请确保 `shittim_lib` 与主脚本处于同一目录下
@@ -120,14 +115,15 @@ curl -X POST "http://127.0.0.1:9880/"   -H "Content-Type: application/json"   -d
 老师可以通过编辑config进行设置
 1. **silent** 默认设置为false，设置为 true 可全局静音语音反馈，也可以设置为system根据当前是否为power-saver自动判断
 2. **is_exit** 默认设置为false，若设置为 true 将使脚本停止所有响应
-3. **characteristic**默认设置为standard,此设置用来选择prompt,有shy,standard,sweet三个选项
-4. **next_character** 决定下一次触发时出现的角色（plana 或 arona），不必设置，因为除了plana指令以外两小只都会交替出现
-5. **cmd**默认设置为secure（强烈建议）,这样每次执行指令之前都会要求确认。若设置为free,则执行指令无须确认。
-6. **cmd_ignore**默认设置为true（建议），即禁用指令执行功能。若想要使用指令执行功能，写入false
-7. **memory**设置“回忆”的对话数
-8. **model**默认为qwen2.5:7b 也可以设置为qwen2.5:14b 也可设置为ollama可以调用的其他模型
-9. **voice**默认为false，设置为true开启翻译
-10. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
+3. **next_character** 决定下一次触发时出现的角色（plana 或 arona），不必设置，因为除了plana指令以外两小只都会交替出现
+4. **cmd**默认设置为secure（强烈建议）,这样每次执行指令之前都会要求确认。若设置为free,则执行指令无须确认。
+5. **cmd_ignore**默认设置为true（建议），即禁用指令执行功能。若想要使用指令执行功能，写入false
+6. **memory**设置“回忆”的对话数
+7. **model**默认为qwen2.5:7b  也可设置为ollama可以调用的其他模型(如qwen2.5:14b)
+8. **voice**默认为false，设置为true开启翻译
+9. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
+10. **venv**虚拟环境路径，需要指定，如：/home/tzc/miniconda3/envs/plana
 11. **API_KEY** **BASE_URL** **MODEL_NAME** 为api配置，若不使用可留空
+12. **ENABLE_CHAT_API** **ENABLE_TRANS_API**设置对话以及翻译是否用api (true or false)
 
 ---

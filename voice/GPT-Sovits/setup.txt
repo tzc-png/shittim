@@ -1,0 +1,121 @@
+1.配置环境
+conda create -n plana python=3.10
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
+pip install numpy soundfile librosa transformers einops omegaconf librosa phonemizer pytorch-lightning matplotlib pyopenjtalk
+
+2.导出模型
+python3 pack_engine.py \
+    --src ~/my_software/GPT-SoVITS \
+    --out ~/developer/plana_torch/plana_engine
+echo "" > ~/developer/plana_torch/plana_engine/feature_extractor/__init__.py
+cp ~/my_software/GPT-SoVITS/GPT_SoVITS/module/commons.py \
+   ~/developer/plana_torch/plana_engine/module/
+cp ~/my_software/GPT-SoVITS/GPT_SoVITS/module/transforms.py \
+   ~/developer/plana_torch/plana_engine/module/
+sed -i 's/^from f5_tts.model import DiT/#from f5_tts.model import DiT/' \
+    ~/developer/plana_torch/plana_engine/module/models.py
+cp ~/my_software/GPT-SoVITS/GPT_SoVITS/module/mrte_model.py \
+   ~/developer/plana_torch/plana_engine/module/
+cp ~/my_software/GPT-SoVITS/GPT_SoVITS/module/core_vq.py \
+   ~/developer/plana_torch/plana_engine/module/
+cp ~/my_software/GPT-SoVITS/GPT_SoVITS/module/*.py \
+   ~/developer/plana_torch/plana_engine/module/
+cp ~/my_software/GPT-SoVITS/GPT_SoVITS/feature_extractor/*.py \
+   ~/developer/plana_torch/plana_engine/feature_extractor/
+cp -r ~/my_software/GPT-SoVITS/GPT_SoVITS/AR \
+   ~/developer/plana_torch/plana_engine/
+
+cat > ~/developer/plana_torch/plana_engine/feature_extractor/cnhubert.py << 'EOF'
+import torch
+from transformers import HubertModel, Wav2Vec2FeatureExtractor
+
+cnhubert_base_path = ""
+
+class CNHubert(torch.nn.Module):
+    def __init__(self, base_path: str):
+        super().__init__()
+        self.model = HubertModel.from_pretrained(base_path)
+        self.feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(base_path)
+
+    def forward(self, x):
+        return self.model(x)
+
+def get_model():
+    assert cnhubert_base_path, "请先设置 cnhubert_base_path"
+    model = CNHubert(cnhubert_base_path)
+    model.eval()
+    return model
+EOF
+
+sed -i 's/^from f5_tts/#from f5_tts/' \
+    ~/developer/plana_torch/plana_engine/module/models.py
+sed -i 's/^from module.flow/#from module.flow/' \
+    ~/developer/plana_torch/plana_engine/module/models.py
+
+cp ~/my_software/GPT-SoVITS/GPT_SoVITS/utils.py \
+   ~/developer/plana_torch/plana_engine/
+
+3.运行
+服务启动：
+python3 plana_tts_server.py &
+测试请求：
+echo '{"text":"テストです。","out":"/tmp/test.wav"}' | nc -U /tmp/plana_tts.sock
+aplay /tmp/test.wav
+
+
+1. 导出模型：
+在GPT-Sovits主目录运行export_to_onnx.py
+若失败，尝试如下指令：
+	PYTHONPATH=~/my_software/GPT-SoVITS/GPT_SoVITS:$PYTHONPATH
+	# 在文件顶部加上缺失的 import
+	sed -i 's/^from torch import Tensor/from typing import Tuple, Optional\nfrom torch import Tensor/' \
+    ~/my_software/GPT-SoVITS/GPT_SoVITS/AR/modules/patched_mha_with_cache_onnx.py
+	sed -i 's/torch.load(\(.*\), map_location="cpu")/torch.load(\1, map_location="cpu", weights_only=False)/g' \
+    ~/my_software/GPT-SoVITS/export_to_onnx.py
+	sed -i 's/opset_version=16,/opset_version=16,\n            dynamo=False,/g' \
+    ~/my_software/GPT-SoVITS/export_to_onnx.py
+	sed -i 's/opset_version=17,/opset_version=17,\n            dynamo=False,/g' \
+    ~/my_software/GPT-SoVITS/export_to_onnx.py
+	pip install onnxscript
+	pip install pytorch-lightning
+
+同样地运行：export_bert_onnx.py
+（这一步所需内存较大，内存不足可能出错）
+
+2. 为部署创建虚拟环境
+conda create --name plana python=3.10
+conda activate plana
+pip install onnxruntime-gpu soundfile librosa tokenizers numpy pyopenjtalk-prebuilt "setuptools<81"
+pip uninstall pyopenjtalk -y
+pip install numpy==1.26.4
+pip install pyopenjtalk --no-binary pyopenjtalk
+
+把 GPT-SoVITS 的 text/ 目录单独拷贝过来（日语 G2P 和 BERT 特征提取），放到与 plana_tts.py 同目录
+
+注意可能出现cuda兼容性的问题，可以这样修复：
+	pip install nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-cusparse-cu12 \
+	    nvidia-cusolver-cu12 nvidia-nvjitlink-cu12
+	pip install nvidia-cuda-runtime-cu12
+
+	# 生成包含所有 nvidia 库的路径
+	NEW_PATH=$(python3 -c "
+	import os
+	base = '/home/tzc/miniconda3/envs/plana/lib/python3.10/site-packages/nvidia'
+	libs = []
+	for d in sorted(os.listdir(base)):
+	    lib = os.path.join(base, d, 'lib')
+	    if os.path.isdir(lib):
+	        libs.append(lib)
+	print(':'.join(libs))
+	")
+
+	# 替换 ~/.bashrc 里的那行
+	sed -i '/^export LD_LIBRARY_PATH.*nvidia/d' ~/.bashrc
+	echo "export LD_LIBRARY_PATH=${NEW_PATH}:\$LD_LIBRARY_PATH" >> ~/.bashrc
+	source ~/.bashrc
+	运行后把这个的输出路径整个替换掉 ~/.bashrc 里的那行 LD_LIBRARY_PATH
+
+
+3.使用脚本推理
+conda activate plana
+python3 plana_tts.py "テストです。" /tmp/test_out.wav

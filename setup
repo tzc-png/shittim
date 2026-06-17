@@ -59,28 +59,35 @@ cp "$BASHRC" "$BACKUP_BASHRC"
 echo "\033[0;90m[Plana]\033[0m 已备份原始 .bashrc 至 ${BACKUP_BASHRC}"
 
 # 3. 历史记录归档
-HISTORY_LOG="${SHITTIM_DIR}/history/plana_history.log"
+mkdir -p "${SHITTIM_DIR}/history"
+mkdir -p "${SHITTIM_DIR}/config"
+
+HISTORY_LOG="${SHITTIM_DIR}/history/plana_history.jsonl"
 if safe_backup "$HISTORY_LOG"; then
     echo "\033[0;90m[Plana]\033[0m 记忆数据归档成功。"
 fi
-mkdir -p "${SHITTIM_DIR}/history"
 touch "$HISTORY_LOG"
 
-SECURITY_LOG="${SHITTIM_DIR}/history/security.log"
-if safe_backup "$SECURITY_LOG"; then
-    echo "\033[0;90m[Plana]\033[0m 安全日志归档成功。"
+GPT_SOVITS_LOG="${SHITTIM_DIR}/history/gpt_sovits.log"
+if safe_backup "$GPT_SOVITS_LOG"; then
+    echo "\033[0;90m[Plana]\033[0m gpt_sovits接口日志归档成功。"
 fi
-touch "$SECURITY_LOG"
+touch "$GPT_SOVITS_LOG"
 
 API_LOG="${SHITTIM_DIR}/history/api.log"
 if safe_backup "$API_LOG"; then
-    echo "\033[0;90m[Plana]\033[0m 接口日志归档成功。"
+    echo "\033[0;90m[Plana]\033[0m api接口日志归档成功。"
 fi
 touch "$API_LOG"
 
+OLLAMA_LOG="${SHITTIM_DIR}/history/ollama.log"
+if safe_backup "$OLLAMA_LOG"; then
+    echo "\033[0;90m[Plana]\033[0m ollama接口日志归档成功。"
+fi
+touch "$OLLAMA_LOG"
+
 # 4. 配置文件强刷
 CONFIG_FILE="${SHITTIM_DIR}/config/config"
-mkdir -p "${SHITTIM_DIR}/config"
 if safe_backup "$CONFIG_FILE"; then
     echo "\033[0;90m[Plana]\033[0m 配置文件已备份。"
 fi
@@ -88,7 +95,6 @@ fi
 cat <<EOF >"$CONFIG_FILE"
 silent=false
 is_exit=false
-characteristic=standard
 next_character="plana"
 cmd=secure
 cmd_ignore=true
@@ -96,9 +102,12 @@ memory=10
 model=qwen2.5:7b
 voice=false
 translate_model=translategemma:4b
+venv=""
 API_KEY=""
 BASE_URL=""
 MODEL_NAME=""
+ENABLE_CHAT_API=true
+ENABLE_TRANS_API=false
 EOF
 
 # 5. 配置～/.bashrc

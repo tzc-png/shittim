@@ -1,24 +1,23 @@
 #!/bin/bash
 
 # ==================== 1. 颜色配置 ====================
-C_PREFIX_P="\033[0;90m"             # 普拉娜：灰色
-C_PREFIX_A="\033[38;2;100;251;252m" # 阿罗娜：蓝色
-C_ALERT="\033[1;31m"                # 警告文本：红色
-C_DEBUG="\033[1;35m"                # 调试文本：紫色
-NC="\033[0m"                        # 重置颜色
+C_PREFIX_P="\033[0;90m"
+C_PREFIX_A="\033[38;2;100;251;252m"
+C_ALERT="\033[1;31m"
+C_DEBUG="\033[1;35m"
+NC="\033[0m"
 C_CODE_DISPLAY="\033[1;32m"
 
 # ==================== 2. 路径配置 ====================
-# 使用绝对路径确保在任何目录下调用都有效
 SHITTIM_ROOT=$(
     cd "$(dirname "$0")"
     pwd
 )
 CONFIG_FILE="${SHITTIM_ROOT}/config/config"
 
+# ---------- 默认值 ----------
 silent=false
 next_character=plana
-characteristic=shy
 is_exit=false
 cmd=secure
 cmd_ignore=true
@@ -26,19 +25,25 @@ memory=10
 model=qwen2.5:7b
 voice=false
 translate_model=translategemma:4b
-venv="your/path"
-gpt_sovits_path="your/path"
+venv=""
 API_KEY=""
 BASE_URL=""
 MODEL_NAME=""
+ENABLE_CHAT_API=true
+ENABLE_TRANS_API=false
 
-voice_tmp="${SHITTIM_ROOT}/voice/gpt-sovits/plana/tmp.wav"
-model_ckpt="${SHITTIM_ROOT}/voice/gpt-sovits/models/Plana-e15.ckpt"
-model_pth="${SHITTIM_ROOT}/voice/gpt-sovits/models/Plana_e16_s208.pth"
-refer_wav="${SHITTIM_ROOT}/voice/gpt-sovits/references/New_NP0035_Work_Talk_5.wav"
-refer_txt="理解しました，先生は今，特にやるべきことはないですね，暇なんですね。"
-language="ja"
-log_path="${SHITTIM_ROOT}/history/api.log"
+# ── Torch TTS 配置 ────────────────────────────────────────────────────────────
+PLANA_ENGINE_DIR="${SHITTIM_ROOT}/voice/GPT-Sovits/plana_engine"
+PLANA_GPT_PATH="${SHITTIM_ROOT}/voice/GPT-Sovits/models/Plana-e15.ckpt"
+PLANA_VITS_PATH="${SHITTIM_ROOT}/voice/GPT-Sovits/models/Plana_e16_s208.pth"
+PLANA_REF_WAV="${SHITTIM_ROOT}/voice/GPT-Sovits/models/ref.wav"
+PLANA_REF_TXT="理解しました，先生は今，特にやるべきことはないですね，暇なんですね。"
+PLANA_SERVER_SCRIPT="${SHITTIM_ROOT}/voice/GPT-Sovits/plana_tts_server.py"
+PLANA_SOCK="/tmp/plana_tts.sock"
+voice_tmp="${SHITTIM_ROOT}/voice/tmp/plana_tmp.wav"
+# ─────────────────────────────────────────────────────────────────────────────
+
+gpt_sovits_log_path="${SHITTIM_ROOT}/history/gpt_sovits.log"
 
 if [ -f "${CONFIG_FILE}" ]; then
     source "${CONFIG_FILE}"
@@ -48,40 +53,34 @@ if [ "$is_exit" = "true" ]; then
     exit 0
 fi
 
-# system
-CURRENT_PROFILE=$(powerprofilesctl get)
+CURRENT_PROFILE=$(powerprofilesctl get 2>/dev/null || echo "balanced")
 if [ "$CURRENT_PROFILE" == "power-saver" ]; then
-    if [ "$silent" == "system" ]; then
-        silent=true;
-    fi
+    if [ "$silent" == "system" ]; then silent=true; fi
 else
-    if [ "$silent" == "system" ]; then
-        silent=false;
-    fi
+    if [ "$silent" == "system" ]; then silent=false; fi
 fi
 
 # ==================== 3. 核心函数 ====================
+
 msg() {
     local text="$1"
     local voice_file="$2"
-    local is_alert="$3" # 新增：第三个参数判定是否为警告
+    local is_alert="$3"
 
-    # 1. 确定当前执行者
     local current_char=$next_character
     local prefix=""
     local voice_path=""
 
     if [ "$current_char" = "arona" ]; then
-        prefix="${C_PREFIX_A}[Arona]${NC}" # 使用阿罗娜前缀
+        prefix="${C_PREFIX_A}[Arona]${NC}"
         voice_path="${VOICE_BASE}/arona/${voice_file}"
         next_char_to_save="plana"
     else
-        prefix="${C_PREFIX_P}[Plana]${NC}" # 使用普拉娜前缀
+        prefix="${C_PREFIX_P}[Plana]${NC}"
         voice_path="${VOICE_BASE}/plana/${voice_file}"
         next_char_to_save="arona"
     fi
 
-    # 2. 确定文本颜色逻辑
     if [ "$current_char" = "plana" ]; then
         local display_color="${C_PREFIX_P}"
     else
@@ -89,10 +88,9 @@ msg() {
     fi
 
     if [ "$is_alert" = "true" ]; then
-        display_color="${C_ALERT}" # 如果是警告，强制设为红色
+        display_color="${C_ALERT}"
     fi
 
-    # 3. 打印文字
     echo -e "${prefix} ${display_color}${text}${NC}"
 
     if [ "$voice_file" = "" ]; then
@@ -101,231 +99,147 @@ msg() {
         return
     fi
 
-    # 4. 音频处理
     if [ "$silent" != "true" ] && [ -n "$voice_file" ]; then
         if [ -f "$voice_path" ]; then
-            # 仅杀掉当前角色的播放进程，实现交替不打断
-            # pkill -f "ffplay.*${current_char}" > /dev/null 2>&1
             pkill -f "paplay.*${current_char}" >/dev/null 2>&1
-
-            # 核心改进：合并唤醒与播放
-            # 用 { 语句1; 语句2; } & 的方式，让整个序列在后台运行
-            {
-                paplay --client-name="${current_char}" "$voice_path" >/dev/null 2>&1
-            } &
-
+            { paplay --client-name="${current_char}" "$voice_path" >/dev/null 2>&1; } &
         else
             echo -e "${C_DEBUG}[Debug] 找不到${current_char}的音频: ${voice_path}${NC}"
         fi
     fi
 
-    # 5. 更新角色状态到 config 文件
     sed -i "s/next_character=.*/next_character=\"$next_char_to_save\"/" "$CONFIG_FILE"
     next_character=$next_char_to_save
 }
 
-# 日志合法性检查与自动修复函数 (协议：User 必须领先且成对出现)
-check_and_fix_log() {
-    local history_file="${SHITTIM_ROOT}/history/plana_history.log"
+# ── TTS 服务管理 ──────────────────────────────────────────────────────────────
 
-    # 如果文件不存在或为空，无需修复
-    [ ! -s "$history_file" ] && return 0
-
-    local tmp_file="${history_file}.tmp"
-    local last_role=""
-    local buffer=""
-
-    # 逐行扫描日志
-    while IFS= read -r line || [ -n "$line" ]; do
-        # 1. 识别当前行的角色
-        local current_role=""
-        if [[ "$line" =~ ^User: ]]; then
-            current_role="User"
-        elif [[ "$line" =~ ^AI: ]]; then
-            current_role="AI"
-        else
-            continue # 忽略不规范的行
-        fi
-
-        # 2. 状态机逻辑
-        if [ -z "$last_role" ]; then
-            # 第一行：必须是 User
-            if [ "$current_role" = "User" ]; then
-                buffer="$line"
-                last_role="User"
-            fi
-            # 如果第一行是 AI，直接丢弃（没有老师的提问就没有意义）
-        else
-            # 期望交替出现
-            if [ "$current_role" != "$last_role" ]; then
-                if [ "$current_role" = "AI" ]; then
-                    # 成功配对：将 User 和 AI 同时写入临时文件
-                    echo "$buffer" >>"$tmp_file"
-                    echo "$line" >>"$tmp_file"
-                    buffer="" # 清空缓冲
-                    last_role="AI"
-                else
-                    # 出现了连续的 User，更新 buffer 为最新的 User
-                    # 这意味着如果老师连续发了两条，我们以最后一条为准
-                    buffer="$line"
-                    last_role="User"
-                fi
-            else
-                # 如果连续出现相同角色 (如 AI 后面又是 AI)
-                # 则保持 last_role 不变，丢弃旧的，等待下一个角色
-                if [ "$current_role" = "User" ]; then
-                    buffer="$line"
-                fi
-            fi
-        fi
-    done <"$history_file"
-
-    # 覆盖原文件
-    if [ -f "$tmp_file" ]; then
-        mv "$tmp_file" "$history_file"
-    else
-        # 如果修复后什么都没剩下，则清空原文件
-        >"$history_file"
-    fi
-}
-
-# 获取历史记录函数 (全量/智能回忆模式)
-get_history() {
-
-    check_and_fix_log
-
-    local mode=$1
-    local n1=$2
-    local n2=$3
-    local history_file="${SHITTIM_ROOT}/history/plana_history.log"
-
-    # --- 参数合法性强校验 ---
-    if [[ "$mode" != "recent" && "$mode" != "recall" ]]; then
-        echo -e "\033[1;31m[Error]\033[0m get_history 参数错误: 未知的模式 '$mode'" >&2
-        exit 1
-        # 直接终止整个程序执行
-    fi
-
-    # --- 2. 核心改动：空记忆处理 ---
-    # 如果历史文件不存在或内容为空（-s 指文件大小大于0）
-    if [ ! -s "$history_file" ]; then
-        # 直接输出初见引导语，供主脚本中的变量捕获
-        echo "(这是老师和你的第一次对话。你刚被唤醒，请表现得文静、礼貌且略带羞涩。)"
+_ensure_tts_server() {
+    if [ -S "$PLANA_SOCK" ] && pgrep -f "plana_tts_server.py" >/dev/null 2>&1; then
         return 0
     fi
+    echo -e "${C_DEBUG}[TTS] 正在启动语音引擎...${NC}" >&2
+    mkdir -p "$(dirname "$voice_tmp")"
+    PLANA_ENGINE_DIR="$PLANA_ENGINE_DIR" \
+    PLANA_GPT_PATH="$PLANA_GPT_PATH" \
+    PLANA_VITS_PATH="$PLANA_VITS_PATH" \
+    PLANA_REF_WAV="$PLANA_REF_WAV" \
+    PLANA_REF_TXT="$PLANA_REF_TXT" \
+    PLANA_SOCK="$PLANA_SOCK" \
+        nohup ${venv}/bin/python "$PLANA_SERVER_SCRIPT" >>"$gpt_sovits_log_path" 2>&1 &
 
-    # 1. 基础数据统计
-    local total_lines=$(wc -l <"$history_file")
-    local valid_total=$((total_lines / 2 * 2)) # 确保是偶数对
-    local total_pairs=$((valid_total / 2))
-    local requested_total=$((n1 + n2))
-
-    # 2. 逻辑分水岭：如果请求总量 >= 实际总量，或者模式为 recent
-    if [ "$mode" = "recent" ] || [ "$requested_total" -ge "$total_pairs" ]; then
-        if [ "$mode" = "recent" ]; then
-            # recent 模式依然遵循 n1 的限制
-            local n1_lines=$((n1 * 2))
-            tail -n "$n1_lines" "$history_file"
-        else
-            # recall 模式但数据量不足：直接输出文件所有有效内容
-            head -n "$valid_total" "$history_file"
+    local waited=0
+    until [ -S "$PLANA_SOCK" ]; do
+        sleep 1
+        waited=$((waited + 1))
+        if [ $waited -ge 60 ]; then
+            echo -e "${C_DEBUG}[Error] 语音引擎启动超时${NC}" >&2
+            return 1
         fi
-        return 0
-    fi
-
-    echo "（下面是之前的对话）"
-    # 3. 核心 Recall 逻辑 (仅在数据充足时触发)
-    local n1_lines=$((n1 * 2))
-    local recent_start_line=$((valid_total - n1_lines + 1))
-    local pool_pairs=$(((recent_start_line - 1) / 2))
-
-    # 随机抽取 n2 对并保持顺序
-    local random_indices=$(seq 1 "$pool_pairs" | shuf -n "$n2" | sort -n)
-    for idx in $random_indices; do
-        local start=$(((idx - 1) * 2 + 1))
-        sed -n "${start},$((start + 1))p" "$history_file"
     done
-
-    # 只有在这里才会出现记忆断层
-    echo "（下面是最近的对话）"
-
-    # 输出最近的 n1 对
-    tail -n "$n1_lines" "$history_file"
+    sleep 1
+    echo -e "${C_DEBUG}[TTS] 语音引擎就绪${NC}" >&2
 }
 
-# 场景重置判定函数
-# 参数 $1: 原始历史记录变量名 (建议直接传入内容)
-context_auto_reset() {
-    local raw_history="$1"
-
-    # 1. 提取最后一条记录的时间戳 (匹配格式如 2026-04-13 09:06:14)
-    # 使用 grep 和 tail 确保拿到最后一行的时间
-    local last_time_str=$(echo "$raw_history" | grep -oP '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}' | tail -n 1)
-
-    # 如果没找到时间戳（比如第一次对话），直接返回原内容
-    if [ -z "$last_time_str" ]; then
-        echo "$raw_history"
+onnx_tts() {
+    local text="$1"
+    local out_wav="$2"
+    _ensure_tts_server || return 1
+    local req
+    req=$(printf '{"text":"%s","out":"%s","lang":"ja"}\n' \
+        "$(echo "$text" | sed 's/"/\\"/g')" "$out_wav")
+    local response
+    response=$(echo "$req" | nc -U "$PLANA_SOCK" 2>/dev/null)
+    if echo "$response" | grep -q 'status.*ok'; then
         return 0
+    else
+        echo -e "${C_DEBUG}[Error] TTS 服务返回错误：${response}${NC}" >&2
+        return 1
+    fi
+}
+
+# ── can_use_api ───────────────────────────────────────────────────────────────
+can_use_api() {
+    [ -n "$API_KEY" ] && [ -n "$BASE_URL" ] && [ -n "$MODEL_NAME" ]
+}
+
+# ── 历史记录（messages JSON 格式）────────────────────────────────────────────
+HISTORY_FILE="${SHITTIM_ROOT}/history/plana_history.jsonl"
+
+# 追加一条记录
+append_history() {
+    local role="$1"     # user 或 assistant
+    local content="$2"
+    local time_str
+    time_str=$(date "+%Y-%m-%d %H:%M:%S")
+    mkdir -p "$(dirname "$HISTORY_FILE")"
+    # user 记录带时间戳，assistant 不带（保持内容干净）
+    if [ "$role" = "user" ]; then
+        printf '{"role":"user","content":%s,"time":"%s"}\n' \
+            "$(echo "$content" | jq -Rs .)" "$time_str" >> "$HISTORY_FILE"
+    else
+        printf '{"role":"assistant","content":%s}\n' \
+            "$(echo "$content" | jq -Rs .)" >> "$HISTORY_FILE"
+    fi
+}
+
+# 读取最近 N 轮对话，组装成 messages JSON 数组（不含 system）
+# 返回值：JSON 字符串，如 [{"role":"user","content":"..."},...]
+get_history_messages() {
+    local n="$1"   # 保留最近 n 轮（1轮=1user+1assistant）
+    local lines=$((n * 2))
+
+    if [ ! -s "$HISTORY_FILE" ]; then
+        echo "[]"
+        return
     fi
 
-    # 2. 转换时间为秒数进行计算
-    local last_seconds=$(date -d "$last_time_str" +%s)
-    local now_seconds=$(date +%s)
-    local diff_seconds=$((now_seconds - last_seconds))
+    # 取最后 lines 行，去掉时间戳字段后组装数组
+    tail -n "$lines" "$HISTORY_FILE" \
+        | jq -s '[.[] | {role: .role, content: .content}]'
+}
 
-    # 3. 判定阈值：这里设定为 1800 秒 (0.5 小时)
-    local threshold=1800
+# 场景重置判定（复用原逻辑，改为读 jsonl 最后一条时间）
+context_auto_reset_check() {
+    if [ ! -s "$HISTORY_FILE" ]; then
+        return 0  # 无历史，不需要插入重置提示
+    fi
 
-    if [ $diff_seconds -gt $threshold ]; then
-        # 确定时间段描述
-        local hour=$(date +%H)
-        local period="深夜"
-        [ $hour -ge 5 ] && [ $hour -lt 11 ] && period="早晨"
+    local last_time
+    last_time=$(tail -n 10 "$HISTORY_FILE" \
+        | grep '"role":"user"' | tail -n 1 \
+        | grep -oP '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}' | tail -n 1)
+
+    [ -z "$last_time" ] && return 0
+
+    local last_seconds now_seconds diff
+    last_seconds=$(date -d "$last_time" +%s)
+    now_seconds=$(date +%s)
+    diff=$((now_seconds - last_seconds))
+
+    if [ $diff -gt 1800 ]; then
+        local hour period
+        hour=$(date +%H)
+        period="深夜"
+        [ $hour -ge 5 ]  && [ $hour -lt 11 ] && period="早晨"
         [ $hour -ge 11 ] && [ $hour -lt 14 ] && period="中午"
         [ $hour -ge 14 ] && [ $hour -lt 18 ] && period="下午"
         [ $hour -ge 18 ] && [ $hour -lt 24 ] && period="晚上"
-        [ $hour -ge 0 ] && [ $hour -lt 5 ] && period="深夜"
-
-        # 4. 插入重置标记并输出
-        echo -e "${raw_history}\nSystem: [一段时间过去了，现在是${period}，之前的场景已结束，请根据当前时间重新开始互动。]"
-    else
-        # 时间很近，维持原样
-        echo "$raw_history"
+        echo "一段时间过去了，现在是${period}，之前的场景已结束，请根据当前时间重新开始互动。"
     fi
 }
 
-# ==================== 4. 模型启用 ====================
+# ==================== 4. 启动检查 ====================
 if [ "$1" = "plana" ] && [ "$SHITTIM" = true ]; then
     if [ "$voice" = "true" ]; then
-        # 启动服务（仅一次）
-        if ! pgrep -f "${gpt_sovits_path}/api.py" >/dev/null; then
-
-            cd ${gpt_sovits_path}
-            ${venv}/bin/python ${gpt_sovits_path}/api.py -dr "${refer_wav}" -dt "${refer_txt}" -dl "${language}" >"$log_path" 2>&1 &
-            cd -
-
-            # 等待服务就绪
-            msg "正在启动GPT-SoVits，请稍候……" "" "false"
-
-            until curl -s http://127.0.0.1:9880 >/dev/null; do
-                sleep 1
-            done
-
-            JSON_PAYLOAD=$(
-                python3 - <<EOF
-import json
-
-print(json.dumps({
-    "gpt_model_path": "$model_ckpt",
-    "sovits_model_path": "$model_pth"
-}, ensure_ascii=False))
-EOF
-            )
-            curl -s -o /dev/null -X POST "http://127.0.0.1:9880/set_model" \
-                -H "Content-Type: application/json" \
-                -d "$JSON_PAYLOAD"
-
-            sleep 2
+        if [ ! -f "$PLANA_GPT_PATH" ]; then
+            echo -e "${C_DEBUG}[Warning] 未找到 GPT 模型：${PLANA_GPT_PATH}${NC}"
+        fi
+        if [ ! -f "$PLANA_VITS_PATH" ]; then
+            echo -e "${C_DEBUG}[Warning] 未找到 SoVITS 模型：${PLANA_VITS_PATH}${NC}"
+        fi
+        if [ ! -f "$PLANA_SERVER_SCRIPT" ]; then
+            echo -e "${C_DEBUG}[Warning] 未找到推理服务脚本：${PLANA_SERVER_SCRIPT}${NC}"
         fi
     fi
 fi
