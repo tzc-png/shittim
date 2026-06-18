@@ -2,64 +2,55 @@
 
 老师，这是一个基于《蔚蓝档案》主题开发的 Bash 终端工具。通过此工具 **普拉娜 (Plana)** 与 **阿罗娜 (Arona)** 将进驻您的终端，提供情感陪伴。老师可以在Linux操作系统上尝试运行这个项目。
 
-使用的项目包括：GPT-SoVITS
+主要使用的项目：GPT-SoVITS
 
 使用的模型来自：bilibili@SLNeil
 （BV1o4fyYuEPW）
 
-核心对话引擎：Ollama (Qwen 2.5:7b, Qwen 2.5:14b)
+核心对话引擎：Ollama (Qwen 2.5:7b, Qwen 2.5:14b) / 自备API
 
-**暂时去除所有指令执行相关功能**
-**（不要跟我说我写的prompt不符合人设，因为是云玩家（bushi））**
-
-## 📋 依赖要求 (Dependencies)
-
-在运行本项目前，请确保老师的 Linux 环境已安装以下必要组件：
-
-### 1. 核心系统工具
-* **Bash (4.0+):** 脚本运行的基础环境
-* **bc:** 用于处理复杂的数学运算（如系统负载解析）
-* **awk / sed:** 用于提取系统数据及角色状态持久化
-* **procps:** 提供 `free` 命令以监控内存占用情况
-* **jq:** 用于处理 AI 接口的 JSON 数据。
-* **Ollama:** 请确保已通过 `ollama pull qwen2.5:7b` 获取对话模型，若决定完全使用api,可以配置config中的ENABLE_CHAT_API以及ENABLE_TRANS_API都为true。
-
-### 2. 音频支持
-* **pulseaudio-utils:** 必须安装，系统通过 `paplay` 指令驱动语音反馈
-
-**安装参考 (Ubuntu/Debian):**
-```bash
-sudo apt update && sudo apt install bc jq pulseaudio-utils procps coreutils
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull qwen2.5:7b
-```
-
----
 
 ## 🚀 快速安装 (Quick Start)
 
 ### 1. 部署项目
-建议老师将项目文件夹放置于您的家目录下(也可以是的其他路径)：
+建议老师将项目文件夹放置于您的家目录下(也可以放在其他路径)：
 ```bash
 git clone <your-repo-url> ~/shittim
 cd ~/shittim
 ```
 
-### 2. 执行配置协议
-按照“依赖要求”进行工具安装。
+### 2. Linux 基础环境
+以下组件通常已随系统预装：
+-sed
+-awk
+-bash
+-coreutils
+-procps
 
-在此基础上我们提供了一键配置脚本，会自动处理终端配色（PS1）、路径设置（PATH）以及开机唤醒逻辑：
+安装项目所需额外依赖：
+```bash
+sudo apt update
+
+sudo apt install bc jq curl pulseaudio-utils
+```
+
+部署本地模型（可以用api替代，若要替代，配置ENABLE_CHAT_API为true）
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull qwen2.5:7b
+```
+
+### 3. 执行配置脚本并激活更改
 ```bash
 sh ./setup.sh
 ```
 
-### 3. 激活更改
-执行以下命令或重新打开终端，即可完成什亭之匣的连接：
+执行以下命令或重新打开终端：
 ```bash
 source ~/.bashrc
 ```
 
-### 4. 语音输出
+### 4. 语音输出配置
 执行以下命令来下载必要组建配置虚拟环境：
 ```bash
 conda create -n plana python=3.10
@@ -84,14 +75,10 @@ ollama pull translategemma:4b
 ```
 
 还需要下载模型文件，我放在了网盘上，下载解压后：
+* `Plana-e15.ckpt`以及`Plana_e16_s208.pth`放到`/shittim/voice/GPT-Sovits/models`
+* `pytorch_model.bin`放到`/shittim/voice/GPT-Sovits/plana_engine/pretrained_models/chinese-hubert-base`
+* 链接:https://pan.baidu.com/s/1uW2DfQESnsDdDdXeMpMq3A?pwd=72e8 
 
-Plana-e15.ckpt以及Plana_e16_s208.pth放到/shittim/voice/GPT-Sovits/models
-
-pytorch_model.bin放到/shittim/voice/GPT-Sovits/plana_engine/pretrained_models/chinese-hubert-base
-
-【超级会员V4】通过百度网盘分享的文件：upload
-链接:https://pan.baidu.com/s/1uW2DfQESnsDdDdXeMpMq3A?pwd=72e8 
-复制这段内容打开「百度网盘APP 即可获取」
 ---
 
 ## 🛠️ 功能列表 (Features)

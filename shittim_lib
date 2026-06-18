@@ -146,8 +146,14 @@ onnx_tts() {
     local out_wav="$2"
     _ensure_tts_server || return 1
     local req
-    req=$(printf '{"text":"%s","out":"%s","lang":"ja"}\n' \
-        "$(echo "$text" | sed 's/"/\\"/g')" "$out_wav")
+    
+    #req=$(printf '{"text":"%s","out":"%s","lang":"ja"}\n' \
+    #    "$(echo "$text" | sed 's/"/\\"/g')" "$out_wav")
+
+    req=$(jq -n --arg text "$text" --arg out "$out_wav" \
+        '{"text":$text,"out":$out,"lang":"ja"}')
+    req="${req}"$'\n'
+
     local response
     response=$(echo "$req" | nc -U "$PLANA_SOCK" 2>/dev/null)
     if echo "$response" | grep -q 'status.*ok'; then

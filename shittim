@@ -35,6 +35,7 @@ case "$1" in
     echo -e "  \033[1;32mstartup\033[0m       - 提前申请plana的资源"
     echo -e "  \033[1;32mfree\033[0m          - 释放plana的资源"
     echo -e "  \033[1;32mresetproxy\033[0m    - 关闭代理"
+    echo -e "  \033[1;32mstats\033[0m         - 查看token使用"
     ;;
 
 "rain")
@@ -190,13 +191,14 @@ case "$1" in
         JSON_DATA=$(jq -n \
             --arg m "$MODEL_NAME" \
             --argjson msgs "$MESSAGES" \
-            '{"model":$m,"messages":$msgs,"temperature":0.85,"thinking_budget":0,"stream":false}')
+            '{"model":$m,"messages":$msgs,"temperature":0.85,"thinking":{"type":"disabled"},"stream":false}')
 
-        API_RESULT=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" \
+        API_RESULT=$(curl -s -X POST "${BASE_URL}/chat/completions" \
             -H "Authorization: Bearer ${API_KEY}" \
             -H "Content-Type: application/json" \
             -d "$JSON_DATA")
 
+        # 记录请求
         echo "api(chat) send:" >> "$api_log_path"  2>&1
         echo $JSON_DATA >> "$api_log_path"  2>&1
         echo "api(chat) result:" >> "$api_log_path"  2>&1
@@ -212,6 +214,16 @@ case "$1" in
 
         RESPONSE=$(echo "$API_RESULT" | jq -r '.choices[0].message.content')
 
+        # 记录 token 用量
+        _USAGE_PROMPT=$(echo "$API_RESULT" | jq -r '.usage.prompt_tokens // 0')
+        _USAGE_COMP=$(echo "$API_RESULT" | jq -r '.usage.completion_tokens // 0')
+        _USAGE_CACHED=$(echo "$API_RESULT" | jq -r '.usage.prompt_tokens_details.cached_tokens // 0')
+        ${venv}/bin/python "${SCRIPT_DIR}/token_stats.py" record \
+            --model "$MODEL_NAME" --type "chat" \
+            --prompt "$_USAGE_PROMPT" \
+            --completion "$_USAGE_COMP" \
+            --cached "$_USAGE_CACHED"
+
     else
         # Ollama：将 messages 转为 system+prompt 格式
         HISTORY_TEXT=$(echo "$HISTORY_MESSAGES" | jq -r \
@@ -220,7 +232,7 @@ case "$1" in
         if [ "$model" = "qwen2.5:14b" ]; then
             JSON_DATA=$(jq -n \
                 --arg m "qwen2.5:14b" \
-                --arg s "$SYSTEM_CONTENT" \
+                --arg s "$SYSTEM_PROMPT" \
                 --arg p "${HISTORY_TEXT}\nUser: ${USER_INPUT}" \
                 '{"model":$m,"system":$s,"prompt":$p,
                   "options":{"num_thread":8,"num_ctx":4096,
@@ -229,7 +241,7 @@ case "$1" in
         else
             JSON_DATA=$(jq -n \
                 --arg m "qwen2.5:7b" \
-                --arg s "$SYSTEM_CONTENT" \
+                --arg s "$SYSTEM_PROMPT" \
                 --arg p "${HISTORY_TEXT}\nUser: ${USER_INPUT}" \
                 '{"model":$m,"system":$s,"prompt":$p,"stream":false}')
         fi
@@ -237,6 +249,7 @@ case "$1" in
         RAW_RESPONESE=$(curl -s -X POST http://localhost:11434/api/generate \
             -d "$JSON_DATA")
 
+        # 记录请求
         echo "ollama(chat) send:" >> "$ollama_log_path"  2>&1
         echo $JSON_DATA >> "$ollama_log_path"  2>&1
         echo "ollama(chat) result:" >> "$ollama_log_path"  2>&1
@@ -268,13 +281,14 @@ case "$1" in
                     --arg m "$MODEL_NAME" \
                     --arg p "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}" \
                     '{"model":$m,"messages":[{"role":"user","content":$p}],
-                      "temperature":0.3,"thinking_budget":0,"stream":false}')
+                      "temperature":0.3,"thinking":{"type":"disabled"},"stream":false}')
                 
-                TRANSLATE_RESULT_RAW=$(curl -s -X POST "${BASE_URL}/v1/chat/completions" \
+                TRANSLATE_RESULT_RAW=$(curl -s -X POST "${BASE_URL}/chat/completions" \
                     -H "Authorization: Bearer ${API_KEY}" \
                     -H "Content-Type: application/json" \
                     -d "$JSON_TRANSLATE")
 
+                # 记录请求
                 echo "api(translate) send:" >> "$api_log_path"  2>&1
                 echo $JSON_TRANSLATE >> "$api_log_path"  2>&1
                 echo "api(translate) result:" >> "$api_log_path"  2>&1
@@ -289,10 +303,20 @@ case "$1" in
                     TRANSLATE_RESULT=$(echo "$TRANSLATE_RESULT_RAW" | jq -r '.choices[0].message.content')
                 fi
 
+                # 记录翻译 token
+                _USAGE_PROMPT=$(echo "$TRANSLATE_RESULT_RAW" | jq -r '.usage.prompt_tokens // 0')
+                _USAGE_COMP=$(echo "$TRANSLATE_RESULT_RAW" | jq -r '.usage.completion_tokens // 0')
+                _USAGE_CACHED=$(echo "$TRANSLATE_RESULT_RAW" | jq -r '.usage.prompt_tokens_details.cached_tokens // 0')
+                ${venv}/bin/python "${SCRIPT_DIR}/token_stats.py" record \
+                    --model "$MODEL_NAME" --type "translate" \
+                    --prompt "$_USAGE_PROMPT" \
+                    --completion "$_USAGE_COMP" \
+                    --cached "$_USAGE_CACHED"
             else
                 TRANSLATE_RESULT=$(ollama run "${translate_model}" \
                     "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}")
 
+                # 记录请求
                 echo "ollama(translate) send:" >> "$ollama_log_path"  2>&1
                 echo "请把下面中文翻译成纯日语，只输出结果：${RESPONSE_CLEAN}" >> "$ollama_log_path"  2>&1
                 echo "ollama(translate) result:" >> "$ollama_log_path"  2>&1
@@ -315,6 +339,13 @@ case "$1" in
         next_character=plana
         msg "$RESPONSE" "" "false"
     fi
+    ;;
+
+"stats")
+    ${venv}/bin/python "${SCRIPT_DIR}/token_stats.py" report
+    ;;
+"stats-today")
+    ${venv}/bin/python "${SCRIPT_DIR}/token_stats.py" report --today
     ;;
 
 *)

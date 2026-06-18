@@ -87,6 +87,7 @@ fi
 touch "$OLLAMA_LOG"
 
 # 4. 配置文件强刷
+mkdir -p "${SHITTIM_DIR}/config"
 CONFIG_FILE="${SHITTIM_DIR}/config/config"
 if safe_backup "$CONFIG_FILE"; then
     echo "\033[0;90m[Plana]\033[0m 配置文件已备份。"
