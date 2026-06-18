@@ -1,3 +1,4 @@
-voice/GPT-Sovits/plana_engine/pretrained_models/
-voice/GPT-Sovits/voice/models/Plana-e15.ckpt
-voice/GPT-Sovits/voice/models/Plana_e16_s208.pth
+voice/GPT-Sovits/plana_engine/pretrained_models/chinese-hubert-base/pytorch_model.bin
+voice/GPT-Sovits/models/Plana-e15.ckpt
+voice/GPT-Sovits/models/Plana_e16_s208.pth
+config/config

@@ -1,6 +1,6 @@
 silent=false
 is_exit=false
-next_character="plana"
+next_character="arona"
 cmd=secure
 cmd_ignore=false
 memory=100

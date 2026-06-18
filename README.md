@@ -46,7 +46,8 @@ cd ~/shittim
 ```
 
 ### 2. 执行配置协议
-按照“依赖要求”进行工具安装
+按照“依赖要求”进行工具安装。
+
 在此基础上我们提供了一键配置脚本，会自动处理终端配色（PS1）、路径设置（PATH）以及开机唤醒逻辑：
 ```bash
 sh ./setup.sh
@@ -67,7 +68,6 @@ pip install numpy soundfile librosa transformers einops omegaconf librosa phonem
 ```
 
 测试方式：
-terminal 1：
 ```bash
 conda activate plana
 python plana_tts_server.py &
@@ -83,6 +83,15 @@ aplay /tmp/test.wav
 ollama pull translategemma:4b
 ```
 
+还需要下载模型文件，我放在了网盘上，下载解压后：
+
+Plana-e15.ckpt以及Plana_e16_s208.pth放到/shittim/voice/GPT-Sovits/models
+
+pytorch_model.bin放到/shittim/voice/GPT-Sovits/plana_engine/pretrained_models/chinese-hubert-base
+
+【超级会员V4】通过百度网盘分享的文件：upload
+链接:https://pan.baidu.com/s/1uW2DfQESnsDdDdXeMpMq3A?pwd=72e8 
+复制这段内容打开「百度网盘APP 即可获取」
 ---
 
 ## 🛠️ 功能列表 (Features)
