@@ -97,8 +97,6 @@ cat <<EOF >"$CONFIG_FILE"
 silent=false
 is_exit=false
 next_character="plana"
-cmd=secure
-cmd_ignore=true
 memory=10
 model=qwen2.5:7b
 voice=false

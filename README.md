@@ -50,7 +50,12 @@ sh ./setup.sh
 source ~/.bashrc
 ```
 
-### 4. 语音输出配置
+### 4. 图形化config配置
+```bash
+pip install kconfiglib
+```
+
+### 5. 语音输出配置
 执行以下命令来下载必要组建配置虚拟环境：
 ```bash
 conda create -n plana python=3.10
@@ -112,14 +117,12 @@ ollama pull translategemma:4b
 1. **silent** 默认设置为false，设置为 true 可全局静音语音反馈，也可以设置为system根据当前是否为power-saver自动判断
 2. **is_exit** 默认设置为false，若设置为 true 将使脚本停止所有响应
 3. **next_character** 决定下一次触发时出现的角色（plana 或 arona），不必设置，因为除了plana指令以外两小只都会交替出现
-4. **cmd**默认设置为secure（强烈建议）,这样每次执行指令之前都会要求确认。若设置为free,则执行指令无须确认。
-5. **cmd_ignore**默认设置为true（建议），即禁用指令执行功能。若想要使用指令执行功能，写入false
-6. **memory**设置“回忆”的对话数
-7. **model**默认为qwen2.5:7b  也可设置为ollama可以调用的其他模型(如qwen2.5:14b)
-8. **voice**默认为false，设置为true开启翻译
-9. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
-10. **venv**虚拟环境路径，需要指定，如：/home/tzc/miniconda3/envs/plana
-11. **API_KEY** **BASE_URL** **MODEL_NAME** 为api配置，若不使用可留空
-12. **ENABLE_CHAT_API** **ENABLE_TRANS_API**设置对话以及翻译是否用api (true or false)
+4. **memory**设置“回忆”的对话数
+5. **model**默认为qwen2.5:7b  也可设置为ollama可以调用的其他模型(如qwen2.5:14b)
+6. **voice**默认为false，设置为true开启翻译
+7. **translate_model**默认为translategemma:4b 也可设置为ollama可以调用的其他模型
+8. **venv**虚拟环境路径，需要指定，如：/home/tzc/miniconda3/envs/plana
+9. **API_KEY** **BASE_URL** **MODEL_NAME** 为api配置，若不使用可留空
+10. **ENABLE_CHAT_API** **ENABLE_TRANS_API**设置对话以及翻译是否用api (true or false)
 
 ---

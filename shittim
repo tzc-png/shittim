@@ -38,6 +38,10 @@ case "$1" in
     echo -e "  \033[1;32mstats\033[0m         - 查看token使用"
     ;;
 
+"menuconfig"|"mc")
+    ${venv}/bin/python "${SCRIPT_DIR}/config/shittim_menuconfig.py"
+    ;;
+
 "rain")
     if [ "$next_character" = "plana" ]; then
         msg "下雨的话就用这个……" "rain.wav" "false"
