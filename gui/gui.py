@@ -1,6 +1,6 @@
 import sys
 import os
-os.environ["G_DEBUG"] = "fatal-warnings"  # 只显示致命错误
+# os.environ["G_DEBUG"] = "fatal-warnings"  # 只显示致命错误
 import json
 import subprocess
 from datetime import datetime
@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QScrollArea, QLineEdit, QPushButton, QLabel,
                              QFrame, QSizePolicy, QSpacerItem)
 from PyQt6.QtGui import QPixmap, QPainter, QPainterPath
-from PyQt6.QtCore import Qt, QSize, QTimer, QUrl, QFileSystemWatcher, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QSize, QTimer, QUrl, QFileSystemWatcher, QThread, pyqtSignal, QEvent
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 
@@ -37,6 +37,10 @@ WINDOW_TITLE = "plana"
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700
 LIVE_ZONE_WIDTH = 350
+
+# 历史记录分批加载配置
+HISTORY_INIT_COUNT = 6    # 初始加载的历史消息条数
+HISTORY_BATCH_COUNT = 12   # 每次向上滚动拉顶时，额外加载的历史消息条数
 # ==============================================================================
 
 def get_round_avatar(image_path, size=40):
@@ -154,6 +158,23 @@ class ChatWindow(QWidget):
         self.loading_widget = None # 用来保存临时的等待状态气泡控件
         
         self.init_ui()
+
+        self.all_history_lines = []   # 内存缓存：存放 jsonl 文件的所有行文本
+        self.history_start_ptr = 0    # 指针：记录当前已经加载到界面的最顶端消息在列表中的索引
+        self.is_loading_more = False  # 是否正在加载历史的锁
+        self.old_max = 0              # 记录加载前的旧滚动条最大值
+
+        # 【核心：绑定滚动条信号】
+        # 1. 监听滚动位置，滑到顶(0)时好触发加载
+        self.scroll_area.verticalScrollBar().valueChanged.connect(self.on_scroll_value_changed)
+        # 2. 监听范围变化，加载完新控件后好精准把滚动条推回原位
+        self.scroll_area.verticalScrollBar().rangeChanged.connect(self.on_scroll_range_changed)
+        # 【监听鼠标拖拽松开信号】为了解决拖拽跳屏问题
+        self.scroll_area.verticalScrollBar().sliderReleased.connect(self.on_slider_released)
+        # 【安装事件过滤器】为了解决消息太少时滚轮和键盘失效的问题
+        self.scroll_area.installEventFilter(self)
+        self.scroll_area.viewport().installEventFilter(self)
+
         self.load_all_history_from_config()
         
         self.file_watcher = QFileSystemWatcher(self)
@@ -250,16 +271,24 @@ class ChatWindow(QWidget):
         self.setLayout(global_layout)
 
     def format_smart_datetime(self, raw_time_str):
-        """将 2026-06-25 11:22:07 转换为 2026-06-25 11:22"""
+        """将 2026-06-25 11:22:07 转换为 '今天 11:22:07' 或 '2026-06-25 11:22:07'"""
+        now = datetime.now()
+        
         if not raw_time_str:
-            return datetime.now().strftime('%Y-%m-%d %H:%M')
+            return now.strftime('%Y-%m-%d %H:%M:%S')
         
         try:
-            # 尝试按照标准格式解析
+            # 1. 尝试按照标准格式解析（保留秒数）
             dt = datetime.strptime(raw_time_str.strip(), "%Y-%m-%d %H:%M:%S")
-            return dt.strftime("%Y-%m-%d %H:%M")
+            
+            # 2. 判断解析出来的日期是否与今天的日期一致
+            if dt.date() == now.date():
+                return f"今天 {dt.strftime('%H:%M:%S')}"
+            else:
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
+                
         except ValueError:
-            # 如果 shittim 脚本传过来的格式没有秒，或者格式特殊，则原样返回防崩
+            # 如果格式特殊或不匹配，原样返回防崩溃
             return raw_time_str.strip()
 
     def parse_json_line(self, line):
@@ -287,31 +316,30 @@ class ChatWindow(QWidget):
         if not os.path.exists(CONFIG_FILE_PATH):
             return
         
-        self.current_line_count = 0
-        last_user_time = "" # 用来记住最近一次 user 处的原始 time 字符串
-        
         try:
+            # 1. 一次性把非空行全部读入内存列表缓存
             with open(CONFIG_FILE_PATH, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if not line.strip():
-                        continue
-                    try:
-                        data = json.loads(line.strip())
-                        role = data.get("role")
-                        content = data.get("content", "").strip()
-                        
-                        if role == "user":
-                            last_user_time = data.get("time", "")
-                            sender = "Me"
-                        else:
-                            sender = "Robot"
-                        
-                        # 无论是 user 还是 assistant，统一格式化并使用当前配对的 user 时间
-                        display_time = self.format_smart_datetime(last_user_time)
-                        self.append_message_to_display(sender, content, display_time, auto_scroll=False)
-                    except Exception:
-                        pass
-                    self.current_line_count += 1
+                self.all_history_lines = [line for line in f if line.strip()]
+            
+            self.current_line_count = len(self.all_history_lines)
+            
+            # 2. 计算初始加载的起点指针（比如总共100条，初始加载最后20条，起点就是80）
+            self.history_start_ptr = max(0, self.current_line_count - HISTORY_INIT_COUNT)
+            
+            # 3. 仅正序渲染这最后的初始条数
+            for i in range(self.history_start_ptr, self.current_line_count):
+                line = self.all_history_lines[i]
+                try:
+                    data = json.loads(line.strip())
+                    role = data.get("role")
+                    content = data.get("content", "").strip()
+                    raw_time = data.get("time", "")
+                    
+                    sender = "Me" if role == "user" else "Robot"
+                    display_time = self.format_smart_datetime(raw_time)
+                    self.append_message_to_display(sender, content, display_time, auto_scroll=False)
+                except Exception:
+                    pass
         except Exception as e:
             print(f"首次读取配置文件失败: {e}")
 
@@ -336,33 +364,22 @@ class ChatWindow(QWidget):
 
                     new_lines = lines[self.current_line_count:]
                     
-                    # 追溯历史中最近的一次 user 时间（防止切片断层）
-                    last_user_time = ""
-                    for i in range(min(len(lines), self.current_line_count)):
-                        try:
-                            prev_data = json.loads(lines[i].strip())
-                            if prev_data.get("role") == "user":
-                                last_user_time = prev_data.get("time", "")
-                        except Exception:
-                            pass
-
-                    # 增量处理新行
+                    # 增量处理新行：直接解析每行，再无耦合
                     for line in new_lines:
                         if not line.strip():
                             continue
+
+                        self.all_history_lines.append(line) # 将实时产生的新行也同步塞入内存列表尾部
+
                         try:
                             data = json.loads(line.strip())
                             role = data.get("role")
                             content = data.get("content", "").strip()
+                            raw_time = data.get("time", "") # 直接取当前行的时间
                             
-                            if role == "user":
-                                last_user_time = data.get("time", "")
-                                sender = "Me"
-                            else:
-                                sender = "Robot"
-                                
-                            # 强制让 plana 的时间与那一次的 user 时间完全保持一致
-                            display_time = self.format_smart_datetime(last_user_time)
+                            sender = "Me" if role == "user" else "Robot"
+                            display_time = self.format_smart_datetime(raw_time)
+                            
                             self.append_message_to_display(sender, content, display_time, auto_scroll=True)
                         except Exception:
                             pass
@@ -376,7 +393,8 @@ class ChatWindow(QWidget):
         # 【修改】透传 is_error 参数
         message_widget = MessageWidget(sender, content, timestamp, avatar, is_loading, is_error)
         
-        self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget)
+        # self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget)
+        self.messages_layout.addWidget(message_widget)
 
         if is_loading:
             self.loading_widget = message_widget
@@ -384,6 +402,96 @@ class ChatWindow(QWidget):
         if auto_scroll:
             QApplication.processEvents()
             self.scroll_to_bottom()
+
+    def prepend_message_to_display(self, sender, content, timestamp):
+        """专门负责向聊天布局的最顶部（Index 0）插入老历史气泡"""
+        avatar = self.avatar_me if sender == "Me" else self.avatar_robot
+        message_widget = MessageWidget(sender, content, timestamp, avatar, is_loading=False, is_error=False)
+        # 核心：插入到布局的 1 号位置
+        self.messages_layout.insertWidget(1, message_widget)
+
+    def on_scroll_value_changed(self, value):
+        """当滚动条滑块滑到最顶部（value == 0）时，触发向前加载历史"""
+        if value == 0 and not getattr(self, 'is_loading_more', False):
+            # 【防跳跃核心】：如果用户当前正用鼠标按住滑块拖拽，绝对不能立刻加载！
+            # 否则代码把滑块往下推，但物理鼠标还在顶部，鼠标一动就会立刻产生巨大跳屏。
+            if self.scroll_area.verticalScrollBar().isSliderDown():
+                return 
+            self.load_more_history()
+
+    def eventFilter(self, obj, event):
+        """底层事件拦截：处理消息过少时，滚轮和键盘无法触发滚动条信号的问题"""
+        # 拦截鼠标滚轮
+        if event.type() == QEvent.Type.Wheel:
+            if event.angleDelta().y() > 0:  # 滚轮向上滚
+                if self.scroll_area.verticalScrollBar().value() == 0 and not getattr(self, 'is_loading_more', False):
+                    self.load_more_history()
+
+        # 拦截键盘向上键 / PageUp
+        elif event.type() == QEvent.Type.KeyPress:
+            if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_PageUp):
+                if self.scroll_area.verticalScrollBar().value() == 0 and not getattr(self, 'is_loading_more', False):
+                    self.load_more_history()
+                    
+        return super().eventFilter(obj, event)
+
+    def on_slider_released(self):
+        """当用户松开鼠标拖拽滑块时，检查是否停在最顶部，是则加载"""
+        scrollbar = self.scroll_area.verticalScrollBar()
+        if scrollbar.value() == 0 and not getattr(self, 'is_loading_more', False):
+            self.load_more_history()
+
+    def load_more_history(self):
+        """向前加载更多历史（仅负责插入气泡与记录边界）"""
+        if self.history_start_ptr <= 0:
+            return  # 已经加载到最顶头了
+        
+        scrollbar = self.scroll_area.verticalScrollBar()
+        
+        # 1. 锁定状态，记录插入前的旧最大滚动范围，并临时屏蔽信号
+        self.is_loading_more = True
+        self.old_max = scrollbar.maximum()
+        scrollbar.blockSignals(True)
+        
+        # 计算向前多加载后的新起点
+        new_start = max(0, self.history_start_ptr - HISTORY_BATCH_COUNT)
+        
+        # 倒序将老气泡正序 prepend 插入最顶部
+        for i in range(self.history_start_ptr - 1, new_start - 1, -1):
+            line = self.all_history_lines[i]
+            try:
+                data = json.loads(line.strip())
+                role = data.get("role")
+                content = data.get("content", "").strip()
+                raw_time = data.get("time", "")
+                
+                sender = "Me" if role == "user" else "Robot"
+                display_time = self.format_smart_datetime(raw_time)
+                self.prepend_message_to_display(sender, content, display_time)
+            except Exception:
+                pass
+        
+        self.history_start_ptr = new_start
+        
+        # 2. 气泡塞完了，解除滚动条屏蔽
+        scrollbar.blockSignals(False)
+        
+        # 3. 强制触发 Qt 重新计算内容容器大小，这会立刻激活下面的 rangeChanged 信号
+        self.scroll_area.widget().adjustSize()
+
+    def on_scroll_range_changed(self, min_val, max_val):
+        """当滚动条范围发生改变时（说明新气泡高度已被 Qt 适配），精准推回原位"""
+        if getattr(self, 'is_loading_more', False):
+            # max_val 是加载完新气泡后的新最大滚动值
+            # 新最大值减去旧最大值，刚好等于新插入的这批老气泡占用的绝对像素高度！
+            delta = max_val - self.old_max
+            
+            # 直接将滚动条往下推对应的像素距离，刚才看的那条消息就会死死钉在屏幕最顶端
+            self.scroll_area.verticalScrollBar().setValue(delta)
+            
+            # 解锁，完成本次加载循环
+            self.is_loading_more = False
+
     def scroll_to_bottom(self):
         self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
 
@@ -393,8 +501,8 @@ class ChatWindow(QWidget):
             return
 
         # =================【关键修改：生成临时反馈气泡】=================
-        # 不直接生成永久的“Me”气泡。而是生成一个临时的“思考中”提示气泡，提供即时回车反馈
-        timestamp_show = datetime.now().strftime('%H:%M')
+        # 生成带秒数且支持“今天”前缀的本地过渡时间
+        timestamp_show = self.format_smart_datetime(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         self.append_message_to_display("Me", f"{text}  (正在传输...)", timestamp_show, auto_scroll=True, is_loading=True)
         # =========================================================
 

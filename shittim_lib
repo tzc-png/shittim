@@ -174,16 +174,15 @@ HISTORY_FILE="${SHITTIM_ROOT}/history/plana_history.jsonl"
 append_history() {
     local role="$1"     # user 或 assistant
     local content="$2"
-    local time_str
-    time_str=$(date "+%Y-%m-%d %H:%M:%S")
+    local time_str="$3"
     mkdir -p "$(dirname "$HISTORY_FILE")"
     # user 记录带时间戳，assistant 不带（保持内容干净）
     if [ "$role" = "user" ]; then
         printf '{"role":"user","content":%s,"time":"%s"}\n' \
             "$(echo "$content" | jq -Rs .)" "$time_str" >> "$HISTORY_FILE"
     else
-        printf '{"role":"assistant","content":%s}\n' \
-            "$(echo "$content" | jq -Rs .)" >> "$HISTORY_FILE"
+        printf '{"role":"assistant","content":%s,"time":"%s"}\n' \
+            "$(echo "$content" | jq -Rs .)"  "$time_str" >> "$HISTORY_FILE"
     fi
 }
 

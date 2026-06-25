@@ -156,6 +156,8 @@ case "$1" in
     ;;
 
 "plana")
+    user_input_time=$(date "+%Y-%m-%d %H:%M:%S")
+
     if ! can_use_api; then
         if ! command -v ollama &>/dev/null; then
             echo -e "\033[1;33m[Warning]\033[0m 未检测到 Ollama，且未配置云端 API，AI 对话功能将无法使用。"
@@ -268,10 +270,11 @@ case "$1" in
         RESPONSE=$(echo "$RAW_RESPONESE" | jq -r '.response')
     fi
 
+    plana_output_time=$(date "+%Y-%m-%d %H:%M:%S")
     # ── 记录历史 ──────────────────────────────────────────────────────────────
     if ! echo "$RESPONSE" | grep -q ">>>EXEC:"; then
-        append_history "user" "$USER_INPUT"
-        append_history "assistant" "$RESPONSE"
+        append_history "user" "$USER_INPUT" "$user_input_time"
+        append_history "assistant" "$RESPONSE" "$plana_output_time"
     fi
 
     # ── 指令处理（保持原逻辑）────────────────────────────────────────────────
