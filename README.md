@@ -4,8 +4,10 @@
 
 主要使用的项目：GPT-SoVITS
 
-使用的模型来自：bilibili@SLNeil
+使用的语音模型来自：bilibili@SLNeil
 （BV1o4fyYuEPW）
+
+角色立绘来源：https://kivo.wiki/
 
 核心对话引擎：Ollama (Qwen 2.5:7b, Qwen 2.5:14b) / 自备API
 
@@ -50,8 +52,16 @@ sh ./setup.sh
 source ~/.bashrc
 ```
 
-### 4. 图形化config配置
+### 4. 图形化配置
 ```bash
+sudo apt install python3-pyqt6
+# 去掉不存在的 -plugins 包，只安装核心组件
+sudo apt install python3-pyqt6.qtmultimedia libqt6multimedia6 -y
+sudo apt install gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav -y
+
+sudo apt install libqt6waylandclient6 libqt6waylandcompositor6
+sudo apt install fcitx5-frontend-qt6
+
 pip install kconfiglib
 ```
 

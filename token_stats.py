@@ -26,14 +26,14 @@ STATS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # DeepSeek 定价（美元/1M tokens，换算为人民币，汇率约 7.25）
 PRICING = {
     "deepseek-v4-flash": {
-        "input_cache_hit":  0.0028 * 7.25 / 1000,   # ¥/千token
-        "input_cache_miss": 0.14   * 7.25 / 1000,
-        "output":           0.28   * 7.25 / 1000,
+        "input_cache_hit":  0.0028 * 7.25 / 1_000_000,   # ¥/千token
+        "input_cache_miss": 0.14   * 7.25 / 1_000_000,
+        "output":           0.28   * 7.25 / 1_000_000,
     },
     "deepseek-v4-pro": {
-        "input_cache_hit":  0.003625 * 7.25 / 1000,
-        "input_cache_miss": 0.435    * 7.25 / 1000,
-        "output":           0.87     * 7.25 / 1000,
+        "input_cache_hit":  0.003625 * 7.25 / 1_000_000,
+        "input_cache_miss": 0.435    * 7.25 / 1_000_000,
+        "output":           0.87     * 7.25 / 1_000_000,
     },
 }
 DEFAULT_MODEL = "deepseek-v4-flash"

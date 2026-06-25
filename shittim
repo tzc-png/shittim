@@ -36,6 +36,7 @@ case "$1" in
     echo -e "  \033[1;32mfree\033[0m          - 释放plana的资源"
     echo -e "  \033[1;32mresetproxy\033[0m    - 关闭代理"
     echo -e "  \033[1;32mstats\033[0m         - 查看token使用"
+    echo -e "  \033[1;32chat\033[0m           - 图形化界面聊天"
     ;;
 
 "menuconfig"|"mc")
@@ -146,6 +147,11 @@ case "$1" in
     fi
     next_character=plana
     msg "核心协议已在后台唤醒。老师，想我的时候随时可以叫我。" "startup_finish.wav" "false"
+    exit 0
+    ;;
+
+"chat")
+    python ${SHITTIM_ROOT}/gui/gui.py
     exit 0
     ;;
 
@@ -271,7 +277,7 @@ case "$1" in
     # ── 指令处理（保持原逻辑）────────────────────────────────────────────────
     if echo "$RESPONSE" | grep -q ">>>EXEC:"; then
         echo "该功能暂时关闭"
-        exit 1
+        exit 2
     else
         # ── 语音合成 ──────────────────────────────────────────────────────────
         if [ "$voice" = "true" ]; then
