@@ -15,3 +15,11 @@
 {"time": "2026-06-25 15:10:36", "model": "deepseek-v4-flash", "type": "chat", "prompt": 658, "completion": 24, "cached": 0, "cost": 0.000717}
 {"time": "2026-06-25 15:13:18", "model": "deepseek-v4-flash", "type": "chat", "prompt": 638, "completion": 22, "cached": 0, "cost": 0.000692}
 {"time": "2026-06-25 15:21:08", "model": "deepseek-v4-flash", "type": "chat", "prompt": 633, "completion": 37, "cached": 0, "cost": 0.000718}
+{"time": "2026-06-25 19:41:37", "model": "deepseek-v4-flash", "type": "chat", "prompt": 794, "completion": 34, "cached": 0, "cost": 0.000875}
+{"time": "2026-06-25 19:46:59", "model": "deepseek-v4-flash", "type": "chat", "prompt": 798, "completion": 39, "cached": 0, "cost": 0.000889}
+{"time": "2026-06-25 19:48:09", "model": "deepseek-v4-flash", "type": "chat", "prompt": 798, "completion": 29, "cached": 0, "cost": 0.000869}
+{"time": "2026-06-25 19:53:40", "model": "deepseek-v4-flash", "type": "chat", "prompt": 792, "completion": 32, "cached": 0, "cost": 0.000869}
+{"time": "2026-06-25 19:57:28", "model": "deepseek-v4-pro", "type": "chat", "prompt": 806, "completion": 40, "cached": 0, "cost": 0.002794}
+{"time": "2026-06-25 20:05:31", "model": "deepseek-v4-pro", "type": "chat", "prompt": 829, "completion": 41, "cached": 0, "cost": 0.002873}
+{"time": "2026-06-25 20:08:44", "model": "deepseek-v4-pro", "type": "chat", "prompt": 874, "completion": 45, "cached": 0, "cost": 0.00304}
+{"time": "2026-06-25 20:14:04", "model": "deepseek-v4-flash", "type": "chat", "prompt": 909, "completion": 51, "cached": 0, "cost": 0.001026}

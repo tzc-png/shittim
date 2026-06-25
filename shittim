@@ -151,7 +151,9 @@ case "$1" in
     ;;
 
 "chat")
+    shittim startup
     python ${SHITTIM_ROOT}/gui/gui.py
+    # shittim free
     exit 0
     ;;
 
@@ -171,6 +173,14 @@ case "$1" in
     # ── 构造 messages 数组 ────────────────────────────────────────────────────
     # 读取历史
     HISTORY_MESSAGES=$(get_history_messages "$memory")
+
+    HISTORY_MESSAGES=$(echo "$HISTORY_MESSAGES" | jq 'map(
+        if .role == "assistant" and (.emotion | type == "string") and .emotion != "" and .emotion != "default" then
+            .content += (" [emotion:" + .emotion + "]")
+        else
+            .
+        end
+    )')
 
     # 检查是否需要插入场景重置提示
     RESET_HINT=$(context_auto_reset_check)
@@ -271,10 +281,28 @@ case "$1" in
     fi
 
     plana_output_time=$(date "+%Y-%m-%d %H:%M:%S")
+
     # ── 记录历史 ──────────────────────────────────────────────────────────────
     if ! echo "$RESPONSE" | grep -q ">>>EXEC:"; then
+        # 1. 使用 sed 提取 [emotion:xxx] 中的表情名称，并去除前后空格
+        AI_EMOTION=$(echo "$RESPONSE" | sed -n 's/.*\[emotion:\([^]]*\)\].*/\1/p' | xargs)
+        
+        # 2. 严格校验提取出的情感是否在本地白名单内，不在则静默回退为 neutral
+        case "$AI_EMOTION" in
+            anticipatory|neutral|love|scowling|astonished|delighted|puzzled|sheepish|cheerful|like|recentful)
+                ;;
+            *)
+                AI_EMOTION="neutral"
+                ;;
+        esac
+
+        # 3. 从回复文本中彻底擦除 [emotion:xxx] 标签
+        # 这样随后的语音合成（TTS）和终端/GUI显示的文本都会变干净，不会读出/显示标签
+        RESPONSE=$(echo "$RESPONSE" | sed -E 's/\[emotion:[^]]+\]//g')
+
+        # 4. 写入历史文件（传入提取出的情感）
         append_history "user" "$USER_INPUT" "$user_input_time"
-        append_history "assistant" "$RESPONSE" "$plana_output_time"
+        append_history "assistant" "$RESPONSE" "$plana_output_time" "$AI_EMOTION"
     fi
 
     # ── 指令处理（保持原逻辑）────────────────────────────────────────────────

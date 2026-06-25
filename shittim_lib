@@ -175,19 +175,24 @@ append_history() {
     local role="$1"     # user 或 assistant
     local content="$2"
     local time_str="$3"
+    local emotion="$4"
+
     mkdir -p "$(dirname "$HISTORY_FILE")"
-    # user 记录带时间戳，assistant 不带（保持内容干净）
+
+    # 记录带时间戳
     if [ "$role" = "user" ]; then
         printf '{"role":"user","content":%s,"time":"%s"}\n' \
             "$(echo "$content" | jq -Rs .)" "$time_str" >> "$HISTORY_FILE"
     else
-        printf '{"role":"assistant","content":%s,"time":"%s"}\n' \
-            "$(echo "$content" | jq -Rs .)"  "$time_str" >> "$HISTORY_FILE"
+        [ -z "$emotion" ] && emotion="neutral"
+
+        printf '{"role":"assistant","content":%s,"time":"%s","emotion":"%s"}\n' \
+            "$(echo "$content" | jq -Rs .)" "$time_str" "$emotion" >> "$HISTORY_FILE"
     fi
 }
 
 # 读取最近 N 轮对话，组装成 messages JSON 数组（不含 system）
-# 返回值：JSON 字符串，如 [{"role":"user","content":"..."},...]
+# 返回值：JSON 字符串，如 [{"role":"user","content":"...","emotion":"..."},...]
 get_history_messages() {
     local n="$1"   # 保留最近 n 轮（1轮=1user+1assistant）
     local lines=$((n * 2))
@@ -197,9 +202,9 @@ get_history_messages() {
         return
     fi
 
-    # 取最后 lines 行，去掉时间戳字段后组装数组
+    # 【修改】：不再强行丢弃 emotion 字段，而是允许它存在于导出的 JSON 数组中
     tail -n "$lines" "$HISTORY_FILE" \
-        | jq -s '[.[] | {role: .role, content: .content}]'
+        | jq -s '[.[] | {role: .role, content: .content, emotion: .emotion}]'
 }
 
 # 场景重置判定（复用原逻辑，改为读 jsonl 最后一条时间）
