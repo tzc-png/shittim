@@ -1,5 +1,6 @@
 import sys
 import os
+os.environ["G_DEBUG"] = "fatal-warnings"  # 只显示致命错误
 import json
 import subprocess
 from datetime import datetime
@@ -189,7 +190,7 @@ class ChatWindow(QWidget):
         video_path = os.path.abspath(LIVE_VIDEO_PATH)
         if os.path.exists(video_path):
             self.media_player.setSource(QUrl.fromLocalFile(video_path))
-            self.media_player.mediaStatusChanged.connect(self.handle_status_changed)
+            self.media_player.setLoops(QMediaPlayer.Loops.Infinite)
             self.media_player.play()
         else:
             placeholder = QLabel(f"未找到立绘视频\n{LIVE_VIDEO_PATH}")
@@ -260,11 +261,6 @@ class ChatWindow(QWidget):
         except ValueError:
             # 如果 shittim 脚本传过来的格式没有秒，或者格式特殊，则原样返回防崩
             return raw_time_str.strip()
-
-    def handle_status_changed(self, status):
-        if status == QMediaPlayer.MediaStatus.EndOfMedia:
-            self.media_player.setPosition(0)
-            self.media_player.play()
 
     def parse_json_line(self, line):
         try:
