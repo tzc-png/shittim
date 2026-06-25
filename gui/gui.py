@@ -25,7 +25,9 @@ current_dir = os.path.dirname(current_file_path)
 
 CONFIG_FILE_PATH = os.path.join(current_dir, "../history/plana_history.jsonl")       # 历史对话文本配置文件路径（只读、监听）
 AVATAR_ME_PATH = os.path.join(current_dir, "sensei.png")          # 你的头像路径
-AVATAR_ROBOT_PATH = os.path.join(current_dir, "plana.png")    # 对方（普拉娜酱）的头像路径
+# AVATAR_ROBOT_PATH = os.path.join(current_dir, "plana.png")    # 对方（普拉娜酱）的头像路径
+EMOTIONS_DIR = os.path.join(current_dir, "plana_emotions")
+
 LIVE_VIDEO_PATH = os.path.join(current_dir, "plana.webm") # 侧边动态立绘视频路径
 
 # 外部命令配置
@@ -41,6 +43,9 @@ LIVE_ZONE_WIDTH = 350
 # 历史记录分批加载配置
 HISTORY_INIT_COUNT = 6    # 初始加载的历史消息条数
 HISTORY_BATCH_COUNT = 12   # 每次向上滚动拉顶时，额外加载的历史消息条数
+
+# 【新增】全局头像大小配置（单位：像素）
+AVATAR_SIZE = 65
 # ==============================================================================
 
 def get_round_avatar(image_path, size=40):
@@ -72,7 +77,8 @@ class MessageWidget(QFrame):
         self.main_layout.setSpacing(10)
 
         avatar_label = QLabel()
-        avatar_label.setFixedSize(QSize(40, 40))
+        # 【修改】使用全局尺寸，头像框会自动等比例放大
+        avatar_label.setFixedSize(QSize(AVATAR_SIZE, AVATAR_SIZE))
         avatar_label.setPixmap(avatar_pixmap)
 
         content_stack_layout = QVBoxLayout()
@@ -151,8 +157,9 @@ class CommandRunnerThread(QThread):
 class ChatWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.avatar_me = get_round_avatar(AVATAR_ME_PATH)    
-        self.avatar_robot = get_round_avatar(AVATAR_ROBOT_PATH) 
+        self.avatar_me = get_round_avatar(AVATAR_ME_PATH, size=AVATAR_SIZE)    
+        # self.avatar_robot = get_round_avatar(AVATAR_ROBOT_PATH)
+        self.robot_avatar_cache = {} 
         
         self.current_line_count = 0
         self.loading_widget = None # 用来保存临时的等待状态气泡控件
@@ -270,6 +277,22 @@ class ChatWindow(QWidget):
         global_layout.addWidget(chat_container, stretch=1)
         self.setLayout(global_layout)
 
+    def get_robot_avatar(self, emotion):
+        """动态获取机器人头像，带缓存机制与静默回退逻辑"""
+        if not emotion:
+            emotion = "default"
+            
+        if emotion not in self.robot_avatar_cache:
+            # 如果缓存里没有，就去硬盘找
+            emotion_path = os.path.join(EMOTIONS_DIR, f"{emotion}.png")
+            # 如果对应情感的文件不存在，静默回退到 default.png
+            if not os.path.exists(emotion_path):
+                emotion_path = os.path.join(EMOTIONS_DIR, "default.png")
+                
+            self.robot_avatar_cache[emotion] = get_round_avatar(emotion_path, size=AVATAR_SIZE)
+            
+        return self.robot_avatar_cache[emotion]
+
     def format_smart_datetime(self, raw_time_str):
         """将 2026-06-25 11:22:07 转换为 '今天 11:22:07' 或 '2026-06-25 11:22:07'"""
         now = datetime.now()
@@ -334,10 +357,11 @@ class ChatWindow(QWidget):
                     role = data.get("role")
                     content = data.get("content", "").strip()
                     raw_time = data.get("time", "")
+                    emotion = data.get("emotion", "default") # 【新增】：获取情感字段，默认 fallback 为 "default"
                     
                     sender = "Me" if role == "user" else "Robot"
                     display_time = self.format_smart_datetime(raw_time)
-                    self.append_message_to_display(sender, content, display_time, auto_scroll=False)
+                    self.append_message_to_display(sender, content, display_time,emotion=emotion, auto_scroll=False)
                 except Exception:
                     pass
         except Exception as e:
@@ -376,11 +400,12 @@ class ChatWindow(QWidget):
                             role = data.get("role")
                             content = data.get("content", "").strip()
                             raw_time = data.get("time", "") # 直接取当前行的时间
+                            emotion = data.get("emotion", "default")
                             
                             sender = "Me" if role == "user" else "Robot"
                             display_time = self.format_smart_datetime(raw_time)
                             
-                            self.append_message_to_display(sender, content, display_time, auto_scroll=True)
+                            self.append_message_to_display(sender, content, display_time,emotion=emotion, auto_scroll=True)
                         except Exception:
                             pass
                     
@@ -388,12 +413,12 @@ class ChatWindow(QWidget):
         except Exception as e:
             print(f"增量读取新消息失败: {e}")
 
-    def append_message_to_display(self, sender, content, timestamp, auto_scroll=True, is_loading=False, is_error=False):
-        avatar = self.avatar_me if sender == "Me" else self.avatar_robot
-        # 【修改】透传 is_error 参数
-        message_widget = MessageWidget(sender, content, timestamp, avatar, is_loading, is_error)
+    # 【修改】：参数增加 emotion 参数，默认为 "default"
+    def append_message_to_display(self, sender, content, timestamp, emotion="default", auto_scroll=True, is_loading=False, is_error=False):
+        # 【修改】：动态获取头像
+        avatar = self.avatar_me if sender == "Me" else self.get_robot_avatar(emotion)
         
-        # self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget)
+        message_widget = MessageWidget(sender, content, timestamp, avatar, is_loading, is_error)
         self.messages_layout.addWidget(message_widget)
 
         if is_loading:
@@ -403,11 +428,13 @@ class ChatWindow(QWidget):
             QApplication.processEvents()
             self.scroll_to_bottom()
 
-    def prepend_message_to_display(self, sender, content, timestamp):
-        """专门负责向聊天布局的最顶部（Index 0）插入老历史气泡"""
-        avatar = self.avatar_me if sender == "Me" else self.avatar_robot
+    # 【修改】：同样增加 emotion 参数
+    def prepend_message_to_display(self, sender, content, timestamp, emotion="default"):
+        """专门负责向聊天布局的最顶部（Index 1，留在弹簧下方）插入老历史气泡"""
+        # 【修改】：动态获取头像
+        avatar = self.avatar_me if sender == "Me" else self.get_robot_avatar(emotion)
+        
         message_widget = MessageWidget(sender, content, timestamp, avatar, is_loading=False, is_error=False)
-        # 核心：插入到布局的 1 号位置
         self.messages_layout.insertWidget(1, message_widget)
 
     def on_scroll_value_changed(self, value):
@@ -464,10 +491,11 @@ class ChatWindow(QWidget):
                 role = data.get("role")
                 content = data.get("content", "").strip()
                 raw_time = data.get("time", "")
+                emotion = data.get("emotion", "default") # 【新增】：获取情感字段，默认 fallback 为 "default"
                 
                 sender = "Me" if role == "user" else "Robot"
                 display_time = self.format_smart_datetime(raw_time)
-                self.prepend_message_to_display(sender, content, display_time)
+                self.prepend_message_to_display(sender, content, display_time,emotion=emotion)
             except Exception:
                 pass
         
