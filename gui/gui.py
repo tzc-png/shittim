@@ -16,10 +16,16 @@ from PyQt6.QtMultimediaWidgets import QVideoWidget
 # ==============================================================================
 # ⚙️ 全局配置变量
 # ==============================================================================
-CONFIG_FILE_PATH = "./../history/plana_history.jsonl"       # 历史对话文本配置文件路径（只读、监听）
-AVATAR_ME_PATH = "sensei.png"          # 你的头像路径
-AVATAR_ROBOT_PATH = "plana.png"    # 对方（普拉娜酱）的头像路径
-LIVE_VIDEO_PATH = "plana.webm" # 侧边动态立绘视频路径
+# 获取当前脚本的绝对路径（包含文件名）
+current_file_path = os.path.abspath(__file__)
+
+# 获取当前脚本所在的目录路径（不包含文件名）
+current_dir = os.path.dirname(current_file_path)
+
+CONFIG_FILE_PATH = os.path.join(current_dir, "../history/plana_history.jsonl")       # 历史对话文本配置文件路径（只读、监听）
+AVATAR_ME_PATH = os.path.join(current_dir, "sensei.png")          # 你的头像路径
+AVATAR_ROBOT_PATH = os.path.join(current_dir, "plana.png")    # 对方（普拉娜酱）的头像路径
+LIVE_VIDEO_PATH = os.path.join(current_dir, "plana.webm") # 侧边动态立绘视频路径
 
 # 外部命令配置
 COMMAND_NAME = "shittim"           # 调用的主命令

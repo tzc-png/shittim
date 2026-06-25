@@ -108,6 +108,8 @@ ollama pull translategemma:4b
 * `startup`: 提前准备普拉娜的对话（申请显存、运行脚本）
 * `free`: 释放 shittim plana <str> 的资源
 * `resetproxy`: 关闭代理
+* `stats`: 查看当前token使用情况（仅限deepseek）
+* `chat`: 打开图形化聊天界面
 
 ---
 

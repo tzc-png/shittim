@@ -36,7 +36,7 @@ case "$1" in
     echo -e "  \033[1;32mfree\033[0m          - 释放plana的资源"
     echo -e "  \033[1;32mresetproxy\033[0m    - 关闭代理"
     echo -e "  \033[1;32mstats\033[0m         - 查看token使用"
-    echo -e "  \033[1;32chat\033[0m           - 图形化界面聊天"
+    echo -e "  \033[1;32mchat\033[0m           - 图形化界面聊天"
     ;;
 
 "menuconfig"|"mc")
