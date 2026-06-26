@@ -23,3 +23,5 @@
 {"time": "2026-06-25 20:05:31", "model": "deepseek-v4-pro", "type": "chat", "prompt": 829, "completion": 41, "cached": 0, "cost": 0.002873}
 {"time": "2026-06-25 20:08:44", "model": "deepseek-v4-pro", "type": "chat", "prompt": 874, "completion": 45, "cached": 0, "cost": 0.00304}
 {"time": "2026-06-25 20:14:04", "model": "deepseek-v4-flash", "type": "chat", "prompt": 909, "completion": 51, "cached": 0, "cost": 0.001026}
+{"time": "2026-06-26 11:16:54", "model": "deepseek-v4-flash", "type": "chat", "prompt": 1181, "completion": 54, "cached": 0, "cost": 0.001308}
+{"time": "2026-06-26 11:17:08", "model": "deepseek-v4-flash", "type": "chat", "prompt": 1193, "completion": 60, "cached": 0, "cost": 0.001333}

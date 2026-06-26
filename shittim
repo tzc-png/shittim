@@ -195,7 +195,7 @@ case "$1" in
     HISTORY_MESSAGES=$(get_history_messages "$memory")
 
     HISTORY_MESSAGES=$(echo "$HISTORY_MESSAGES" | jq 'map(
-        if .role == "assistant" and (.emotion | type == "string") and .emotion != "" and .emotion != "default" then
+        if .role == "assistant" and (.emotion | type == "string") and .emotion != "" then
             .content += (" [emotion:" + .emotion + "]")
         else
             .
@@ -309,7 +309,7 @@ case "$1" in
         
         # 2. 严格校验提取出的情感是否在本地白名单内，不在则静默回退为 neutral
         case "$AI_EMOTION" in
-            anticipatory|neutral|love|scowling|astonished|delighted|puzzled|sheepish|cheerful|like|recentful)
+            expectant|neutral|love|sulky|dumbfounded|delighted|puzzled|sheepish|cheerful|like|jealous)
                 ;;
             *)
                 AI_EMOTION="neutral"
