@@ -21,6 +21,7 @@ source "${SCRIPT_DIR}/prompt_lib"
 
 api_log_path="${SHITTIM_ROOT}/history/api.log"
 ollama_log_path="${SHITTIM_ROOT}/history/ollama.log"
+gui_log_path="${SHITTIM_ROOT}/history/gui.log"
 
 case "$1" in
 "help")
@@ -117,34 +118,53 @@ case "$1" in
 
 "free")
     msg "正在尝试释放所有占用的资源……" "" "false"
+
     if pgrep -f "plana_tts_server.py" >/dev/null; then
         pkill -f "plana_tts_server.py"
         rm -f "$PLANA_SOCK"
     fi
     msg "语音引擎已经关闭" "" "false"
+
     if pgrep -x "ollama" >/dev/null; then
         ollama stop "${model}" >/dev/null 2>&1
         ollama stop "${translate_model}" >/dev/null 2>&1
     fi
     msg "Ollama 模型已经关闭" "" "false"
+
     msg "资源已完全释放。老师，辛苦了，请好好的休息吧。" "free_rest.wav" "false"
     exit 0
     ;;
 
 "startup")
     msg "正在运行相应脚本并申请显存" "" "false"
-    if pgrep -x "ollama" >/dev/null; then
-        msg "正在将模型 ${model} 加载至显存..." "" "false"
-        curl -s http://127.0.0.1:11434/api/generate \
-            -d "{\"model\": \"${model}\", \"keep_alive\": -1}" >/dev/null &
-    else
+
+    if ! pgrep -x "ollama" >/dev/null; then
         msg "发现 Ollama 未运行，正在尝试唤醒后台服务..." "" "false"
+        export OLLAMA_MAX_LOADED_MODELS=2
         nohup ollama serve >/tmp/ollama_serve.log 2>&1 &
         sleep 2
     fi
+
+    for i in $(seq 1 10); do
+        curl -s http://127.0.0.1:11434/api/tags >/dev/null && break
+        sleep 1
+    done
+
+    if ! { can_use_api && [ "$ENABLE_CHAT_API" = "true" ]; }; then
+        msg "正在将模型 ${model} 加载至显存..." "" "false"
+        curl -s http://127.0.0.1:11434/api/generate \
+            -d "{\"model\": \"${model}\", \"keep_alive\": -1}" >/dev/null &
+    fi
+
     if [ "$voice" = "true" ]; then
+        if ! { can_use_api && [ "$ENABLE_TRANS_API" = "true" ]; }; then
+            msg "正在将模型 ${translate_model} 加载至显存..." "" "false"
+            curl -s http://127.0.0.1:11434/api/generate \
+                -d "{\"model\": \"${translate_model}\", \"keep_alive\": -1}" >/dev/null &
+        fi
         _ensure_tts_server
     fi
+
     next_character=plana
     msg "核心协议已在后台唤醒。老师，想我的时候随时可以叫我。" "startup_finish.wav" "false"
     exit 0
@@ -152,7 +172,7 @@ case "$1" in
 
 "chat")
     shittim startup
-    python ${SHITTIM_ROOT}/gui/gui.py
+    python ${SHITTIM_ROOT}/gui/gui.py >> "$gui_log_path"  2>&1
     # shittim free
     exit 0
     ;;

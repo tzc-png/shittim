@@ -11,6 +11,19 @@
 
 核心对话引擎：Ollama (Qwen 2.5:7b, Qwen 2.5:14b) / 自备API
 
+## 免责声明
+
+### 1. 平台
+* 本人跨平台开发经验为0,也没有进行任何跨平台的适配。此程序可能仅仅在指定系统（甚至只在我的PC上）能运行
+* 我的配置：
+1. CPU：Intel Core i7-14700HX
+2. GPU：NVIDIA GeForce RTX 4060 Laptop GPU，显存 8GB
+3. 驱动：NVIDIA-SMI 595.58.03 Driver Version: 595.58.03 CUDA Version: 13.2
+4. 操作系统：Ubuntu 24.04.4 LTS
+
+### 2. 安装
+* 本人完全没有进行安装验证，因此部署时可能遇到困难，尽管我已经做了一些优化
+* 可能不适合新手，因为我也是萌新，README写的肯定是一坨(bushi)
 
 ## 🚀 快速安装 (Quick Start)
 
